@@ -69,6 +69,87 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Duração do movimento de subida na plataforma.")]
     public float ledgeClimbDuration = 0.2f;
 
+    [Header("Rail Grinding")]
+    
+    [Tooltip("Ação do Input System utilizada para entrar manualmente em um trilho.")]
+    [SerializeField] private InputActionReference railGrindInput;
+    
+    [Tooltip("Ativa ou desativa o grind em trilhos.")]
+    public bool railGrindEnabled = true;
+
+    [Tooltip("Camada dos trilhos (objetos com RailPath).")]
+    public LayerMask railLayer;
+
+    [Tooltip("Raio ao redor dos pés para encontrar um trilho. Quanto maior, mais perdoa.")]
+    public float railCheckRadius = 0.6f;
+
+    [Tooltip("Ao cair, ignora trilhos que estejam acima dos pés por mais que isso (evita grudar vindo por baixo).")]
+    public float railAboveTolerance = 0.3f;
+
+    [Tooltip("Só gruda no ar se a velocidade vertical for menor ou igual a isso (ou seja, caindo).")]
+    public float railMaxAttachRiseSpeed = 0.5f;
+
+    [Tooltip("Valor do input para cima (MoveInputY) para subir no trilho a partir do chão.")]
+    [Range(0.1f, 1f)] public float railHopInput = 0.5f;
+
+    [Tooltip("Tempo (s) sem poder grudar de novo depois de sair de um trilho.")]
+    public float railReattachCooldown = 0.25f;
+
+    [Tooltip("Alcance (unidades) para trocar de trilho para cima ou para baixo durante o grind.")]
+    public float railSwitchRange = 3f;
+
+    [Header("Rail Grinding - Velocidade")]
+    [Tooltip("Velocidade mínima no trilho (unidades por segundo). O Player nunca para.")]
+    public float railMinSpeed = 8f;
+
+    [Tooltip("Velocidade máxima no trilho.")]
+    public float railMaxSpeed = 18f;
+
+    [Tooltip("Aceleração (u/s²) ao segurar na direção do movimento.")]
+    public float railAcceleration = 8f;
+
+    [Tooltip("Atrito (u/s²): volta devagar à velocidade mínima ao soltar o input. Valor alto cancela o ganho da descida.")]
+    public float railDeceleration = 1f;
+
+    [Tooltip("Efeito da inclinação (u/s²): descida acelera, subida freia.")]
+    public float railSlopeAcceleration = 20f;
+    
+    [Header("Rail Grinding - Boost")]
+    [Tooltip("Ação do Input System utilizada para ativar o boost.")]
+    public InputActionReference railBoostAction;
+
+    [Tooltip("Velocidade máxima que pode ser alcançada durante o boost.")]
+    [Min(0f)] public float railBoostMaxSpeed = 20f;
+
+    [Tooltip("Aceleração aplicada enquanto o boost estiver ativo (unidades/s²).")]
+    [Min(0f)] public float railBoostAcceleration = 20f;
+
+    [Tooltip("Duração do boost em segundos.")]
+    [Min(0.1f)] public float railBoostDuration = 1.5f;
+
+    [Tooltip("Tempo de espera após o término do boost para poder utilizá-lo novamente.")]
+    [Min(0f)] public float railBoostCooldown = 2f;
+
+    [Tooltip("Desaceleração aplicada ao terminar o boost, até retornar à velocidade normal.")]
+    [Min(0f)] public float railBoostEndDeceleration = 10f;
+    
+    [Header("Rail Grinding - Visual")]
+    [Tooltip("Inclina o sprite seguindo o trilho.")]
+    public bool railTiltVisual = true;
+
+    [Tooltip("Objeto que inclina. Se vazio, usa o objeto do Animator (o sprite filho).")]
+    public Transform railVisual;
+
+    [Tooltip("Rapidez com que o sprite acompanha a inclinação.")]
+    public float railTiltSpeed = 12f;
+
+    [Header("Lançamento do Rail Grinding")]
+    [Tooltip("Força do pulo ao sair do trilho. O impulso segue a direção perpendicular ao sprite, apontando para cima.")]
+    [Min(0f)] public float railJumpForce = 12f;
+
+    [Tooltip("Velocidade do lançamento ao chegar ao final do trilho. Segue a inclinação e o sentido do movimento.")]
+    [Min(0f)] public float railEndLaunchForce = 18f;
+    
     [Header("Componentes e Entrada")]
     public Rigidbody2D rb;
     public Animator animator;
@@ -78,6 +159,8 @@ public class PlayerController : MonoBehaviour {
     [Header("Status (leitura)")]
     public bool isGrounded;
     public int wallDirection; // -1 = esquerda, 1 = direita, 0 = nenhuma
+    public float currentSpeed;
+    public Vector2 currentVelocity;
 
     [SerializeField] private string currentState;
 
@@ -92,6 +175,7 @@ public class PlayerController : MonoBehaviour {
     public WallSlideState WallSlide { get; private set; }
     public LedgeGrabState LedgeGrab { get; private set; }
     public LedgeClimbState LedgeClimb { get; private set; }
+    public GrindState Grind     { get; private set; }
 
     // ------------------------------------------- Leitura de entrada -------------------------------------------
     public float MoveInput  { get; private set; }
@@ -106,8 +190,8 @@ public class PlayerController : MonoBehaviour {
     public bool WantsToJump   => _jumpBufferTimer > 0f && _coyoteTimer > 0f;
     public bool HasJumpBuffer => _jumpBufferTimer > 0f;
     public bool HasCoyoteTime => _coyoteTimer > 0f;
-
     public bool IsTouchingWall => wallDirection != 0;
+    public bool RailBoostPressed => railBoostAction?.action != null && railBoostAction.action.WasPressedThisFrame();
 
     // ------------------------------------------- Wall Jump & Wall Grab Tracking -------------------------------------------
     public bool  IsWallJumpLocked    => _wallJumpControlTimer > 0f;
@@ -135,6 +219,14 @@ public class PlayerController : MonoBehaviour {
     public int     LedgeDir     { get; private set; }
     public bool    CanGrabLedge => _ledgeGrabCooldown <= 0f;
 
+    // ------------------------------------------- Rail Grinding -------------------------------------------
+    public RailPath GrindRail { get; private set; }
+    public float GrindStartDistance { get; private set; }
+
+    public Vector2 FeetPosition => new Vector2(_col.bounds.center.x, _col.bounds.min.y);
+    public float PivotToFeet => rb.position.y - _col.bounds.min.y;
+    public Transform RailVisualRoot => railVisual != null ? railVisual : (animator != null ? animator.transform : null);
+
     public LayerMask EffectiveWallLayer => wallLayer.value != 0 ? wallLayer : groundLayer;
 
     // ------------------------------------------- Privados -------------------------------------------
@@ -154,6 +246,11 @@ public class PlayerController : MonoBehaviour {
     // ------------------------------------------- Ledge -------------------------------------------
     private float _ledgeGrabCooldown;
 
+    // ------------------------------------------- Rail Grinding -------------------------------------------
+    private const float SwitchHorizontalTolerance = 1.5f;
+    private readonly Collider2D[] _railHits = new Collider2D[8];
+    private float _railCooldownUntil;
+
     private void Awake() {
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
@@ -172,6 +269,7 @@ public class PlayerController : MonoBehaviour {
         WallSlide  = new WallSlideState(this);
         LedgeGrab  = new LedgeGrabState(this);
         LedgeClimb = new LedgeClimbState(this);
+        Grind      = new GrindState(this);
 
         StateMachine.StateChanged += (_, next) =>
             currentState = next != null ? next.GetType().Name : string.Empty;
@@ -180,11 +278,13 @@ public class PlayerController : MonoBehaviour {
     private void OnEnable() {
         if (moveAction?.action != null) moveAction.action.Enable();
         if (jumpAction?.action != null) jumpAction.action.Enable();
+        if (railBoostAction?.action != null) railBoostAction.action.Enable();
     }
 
     private void OnDisable() {
         if (moveAction?.action != null) moveAction.action.Disable();
         if (jumpAction?.action != null) jumpAction.action.Disable();
+        if (railBoostAction?.action != null) railBoostAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
@@ -197,7 +297,14 @@ public class PlayerController : MonoBehaviour {
         StateMachine.Tick();
     }
 
-    private void FixedUpdate() => StateMachine.PhysicsTick();
+    private void FixedUpdate() {
+        StateMachine.PhysicsTick();
+
+        if (rb != null) {
+            currentSpeed = rb.linearVelocity.magnitude;
+            currentVelocity = rb.linearVelocity;
+        }
+    }
 
     // ------------------------------------------- Ler Input -------------------------------------------
     private void ReadInput() {
@@ -394,6 +501,102 @@ public class PlayerController : MonoBehaviour {
     }
 
     public void StartLedgeCooldown() => _ledgeGrabCooldown = 0.3f;
+
+    // ------------------------------------------- API do Rail Grinding -------------------------------------------
+
+    // Tenta entrar no grind. Retorna true se trocou de estado (quem chamou deve dar return).
+    public bool TryEnterGrind() {
+        if (!railGrindEnabled || _col == null || Time.time < _railCooldownUntil)
+            return false;
+        
+        bool manualRequest = railGrindInput != null &&
+                             railGrindInput.action.WasPressedThisFrame();
+        
+        bool automaticRequest = !isGrounded &&
+                                VelocityY <= railMaxAttachRiseSpeed;
+
+        if (!manualRequest && !automaticRequest)
+            return false;
+
+        if (!FindRail(manualRequest, out RailPath rail, out float distance))
+            return false;
+
+        GrindRail = rail;
+        GrindStartDistance = distance;
+        StateMachine.ChangeState(Grind);
+
+        return true;
+    }
+
+    // Procura o trilho mais próximo dos pés
+    private bool FindRail(bool manualRequest, out RailPath best, out float bestDistance) {
+        best = null;
+        bestDistance = 0f;
+
+        Vector2 feet = FeetPosition;
+        int count = OverlapRails(feet, railCheckRadius);
+        float bestSqr = float.MaxValue;
+
+        for (int i = 0; i < count; i++) {
+            if (!_railHits[i].TryGetComponent(out RailPath rail)) continue;
+            if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
+            
+            if (!manualRequest && !rail.autoGrab) continue;
+
+            float distance = rail.GetClosestDistance(feet);
+            Vector2 point = rail.GetPoint(distance);
+            
+            if (!manualRequest && point.y > feet.y + railAboveTolerance) continue;
+
+            float sqr = (point - feet).sqrMagnitude;
+
+            if (sqr < bestSqr) {
+                bestSqr = sqr;
+                best = rail;
+                bestDistance = distance;
+            }
+        }
+
+        return best != null;
+    }
+
+    // Trilho vizinho para trocar durante o grind. vertical: +1 = acima, -1 = abaixo.
+    public bool FindNeighborRail(RailPath current, int vertical, out RailPath best, out float bestDistance) {
+        best = null;
+        bestDistance = 0f;
+        if (_col == null) return false;
+
+        Vector2 feet = FeetPosition;
+        int count = OverlapRails(feet, railSwitchRange);
+        float bestDy = float.MaxValue;
+
+        for (int i = 0; i < count; i++) {
+            if (!_railHits[i].TryGetComponent(out RailPath rail) || rail == current) continue;
+            if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
+
+            float distance = rail.GetClosestDistance(feet);
+            Vector2 point = rail.GetPoint(distance);
+
+            float dy = (point.y - feet.y) * vertical;   // positivo = está na direção pedida
+            if (dy < 0.1f || Mathf.Abs(point.x - feet.x) > SwitchHorizontalTolerance) continue;
+
+            if (dy < bestDy) {
+                bestDy = dy;
+                best = rail;
+                bestDistance = distance;
+            }
+        }
+        return best != null;
+    }
+
+    private int OverlapRails(Vector2 center, float radius) {
+        var filter = new ContactFilter2D();
+        filter.SetLayerMask(railLayer);
+        filter.useTriggers = true;   // o collider do trilho é trigger
+        return Physics2D.OverlapCircle(center, radius, filter, _railHits);
+    }
+
+    public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
     
     //  ------------------------------------------- Ferramentas de movimento usadas pelos states -------------------------------------------
     public void ConsumeJump() {
@@ -469,5 +672,17 @@ public class PlayerController : MonoBehaviour {
         Vector3 head = new Vector3(b.center.x, b.max.y + 0.15f, 0f);
         Gizmos.DrawLine(head, head + Vector3.left  * forwardDist);
         Gizmos.DrawLine(head, head + Vector3.right * forwardDist);
+        
+        //Rail Check Radius
+        Vector3 railCheckPosition = new Vector3(
+            b.center.x,
+            b.min.y,
+            transform.position.z
+        );
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(railCheckPosition, railCheckRadius);
+        
+        Gizmos.DrawSphere(railCheckPosition, 0.04f);
     }
 }

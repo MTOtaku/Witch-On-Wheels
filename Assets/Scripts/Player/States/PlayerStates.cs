@@ -11,6 +11,7 @@ public static class PlayerAnim {
     public static readonly int WallSlide  = Animator.StringToHash("WallSlide");
     public static readonly int LedgeGrab  = Animator.StringToHash("LedgeGrab");
     public static readonly int LedgeClimb = Animator.StringToHash("LedgeClimb");
+    public static readonly int Grind      = Animator.StringToHash("Grind");
 }
 
 // -------------------------------------------  Base dos estados no chão -------------------------------------------
@@ -19,16 +20,20 @@ public abstract class GroundedState : PlayerState {
 
     public override void Enter() => player.SetGravityMultiplier(1f);
 
-// Retorna true se trocou de estado
+    // Retorna true se trocou de estado
     protected bool CheckAirTransitions() {
+        if (player.TryEnterGrind()) return true;
+
         if (player.WantsToJump) {
             player.StateMachine.ChangeState(player.Rise);
             return true;
         }
+
         if (!player.isGrounded && !player.HasCoyoteTime) {
             player.StateMachine.ChangeState(player.Fall);
             return true;
         }
+
         return false;
     }
 }
@@ -125,6 +130,9 @@ public class RiseState : PlayerState {
             return;
         }
 
+        // Rail Grind
+        if (player.TryEnterGrind()) return;
+
         // Encostar na parede subindo → Wall Grab ou Wall Slide
         if (!player.isGrounded && player.IsTouchingWall) {
             if (player.CanWallGrab(player.wallDirection)) {
@@ -179,7 +187,10 @@ public class FallState : PlayerState {
             player.StateMachine.ChangeState(player.LedgeGrab);
             return;
         }
-
+        
+        // Rail Grind
+        if (player.TryEnterGrind()) return;
+        
         // Encostou na parede caindo → Wall Grab ou Wall Slide
         if (player.IsTouchingWall) {
             if (player.CanWallGrab(player.wallDirection)) {
@@ -419,4 +430,255 @@ public class LedgeClimbState : PlayerState {
     }
 
     public override void Exit() => player.SetGravityMultiplier(1f);
+}
+
+// ------------------------------------------- Grind -------------------------------------------
+public class GrindState : PlayerState {
+    // Limite da velocidade usada para encaixar no trilho.
+    // Evita deslocamentos excessivos caso o Player esteja longe do ponto.
+    private const float MaxSnapVelocity = 60f;
+
+    private RailPath _rail;
+    private float _distance;
+    private int _dir = 1;          // +1 ou -1 ao longo do trilho
+    private float _speed;          // velocidade ao longo do trilho
+    private float _height;         // distância do pivô do Player até os pés
+    private float _prevInputY;
+    private Transform _visual;
+    private float _boostTimer;
+    private float _boostCooldownTimer;
+
+    public GrindState(PlayerController player) : base(player) { }
+
+    public override void Enter() {
+        _rail = player.GrindRail;
+        _distance = player.GrindStartDistance;
+        _height = player.PivotToFeet;
+        _prevInputY = player.MoveInputY;
+        _visual = player.RailVisualRoot;
+
+        if (_rail == null || !_rail.IsValid) {
+            player.StateMachine.ChangeState(player.Fall);
+            return;
+        }
+
+        Vector2 tangent = _rail.GetTangent(_distance);
+
+        // Direção: movimento horizontal atual ou input.
+        // Se estiver parado, começa para a direita.
+        float vx = Mathf.Abs(player.VelocityX) > 0.5f
+            ? player.VelocityX
+            : (player.HasInput ? player.MoveInput : 0f);
+
+        if (vx != 0f)
+            _dir = vx * tangent.x >= 0f ? 1 : -1;
+        else
+            _dir = tangent.x >= 0f ? 1 : -1;
+
+        // Preserva o embalo que o Player já tinha ao entrar no trilho.
+        float along = Vector2.Dot(
+            player.rb.linearVelocity,
+            tangent * _dir
+        );
+
+        _speed = Mathf.Clamp(
+            along,
+            player.railMinSpeed,
+            player.railMaxSpeed
+        );
+
+        player.SetGravityMultiplier(0f);
+        player.PlayAnimation(PlayerAnim.Grind);
+    }
+
+    public override void Tick() {
+        // Trilho desativado ou destruído.
+        if (_rail == null || !_rail.IsValid) {
+            player.StateMachine.ChangeState(player.Fall);
+            return;
+        }
+
+        // Pula para fora do trilho, seguindo a direção do sprite.
+        if (player.HasJumpBuffer) {
+            TiltVisual();
+            Vector2 jumpDirection = _visual != null
+                ? (Vector2)_visual.up
+                : Vector2.up;
+
+            // Garante que o impulso seja direcionado para cima.
+            if (jumpDirection.y < 0f)
+                jumpDirection *= -1f;
+
+            jumpDirection.Normalize();
+            
+            Vector2 jumpVelocity = TravelVelocity() + jumpDirection * player.railJumpForce;
+
+            player.StateMachine.ChangeState(player.Rise);
+            player.rb.linearVelocity = jumpVelocity;
+
+            return;
+        }
+
+        // Cima / baixo: detecta apenas o momento em que o botão é apertado.
+        float y = player.MoveInputY;
+
+        bool upPressed = y > 0.5f && _prevInputY <= 0.5f;
+        bool downPressed = y < -0.5f && _prevInputY >= -0.5f;
+
+        _prevInputY = y;
+
+        // Tenta trocar para o trilho acima.
+        if (upPressed && TrySwitchRail(+1))
+            return;
+
+        // Tenta trocar para o trilho abaixo.
+        if (downPressed) {
+            if (TrySwitchRail(-1))
+                return;
+
+            // Não existe trilho abaixo: solta.
+            player.rb.linearVelocity = TravelVelocity();
+            player.StateMachine.ChangeState(player.Fall);
+            return;
+        }
+        
+        // Ativa o boost caso esteja disponível.
+        if (player.RailBoostPressed &&
+            _boostTimer <= 0f &&
+            _boostCooldownTimer <= 0f) {
+
+            _boostTimer = player.railBoostDuration;
+        }
+
+        TiltVisual();
+    }
+
+    public override void PhysicsTick() {
+    if (_rail == null || !_rail.IsValid) return;
+
+    float dt = Time.fixedDeltaTime;
+
+    // Atualiza o tempo do boost e inicia o cooldown ao terminar.
+    if (_boostTimer > 0f) {
+        _boostTimer -= dt;
+
+        if (_boostTimer <= 0f) {
+            _boostTimer = 0f;
+            _boostCooldownTimer = player.railBoostCooldown;
+        }
+    }
+    else if (_boostCooldownTimer > 0f) {
+        _boostCooldownTimer -= dt;
+    }
+
+    Vector2 tangent = _rail.GetTangent(_distance) * _dir;
+
+    bool boosting = _boostTimer > 0f;
+
+    // Verifica se o jogador está pressionando na direção do movimento.
+    bool pushing = player.HasInput &&
+                   player.MoveInput * tangent.x > 0f;
+    
+    float target;
+    float rate;
+
+    if (boosting) {
+        target = player.railBoostMaxSpeed;
+        rate = player.railBoostAcceleration;
+    }
+    else {
+        target = pushing ? player.railMaxSpeed : player.railMinSpeed;
+
+        // Se ainda estiver acima da velocidade normal após o boost, desacelera gradualmente até voltar ao limite normal.
+        if (_speed > player.railMaxSpeed)
+            rate = player.railBoostEndDeceleration;
+        else
+            rate = pushing ? player.railAcceleration : player.railDeceleration;
+    }
+
+    _speed = Mathf.MoveTowards(_speed, target, rate * dt);
+
+    // A inclinação continua influenciando a velocidade.
+    _speed -= tangent.y * player.railSlopeAcceleration * dt;
+
+    // Durante o boost, permite alcançar uma velocidade maior, ao terminar, não corta instantaneamente a velocidade excedente.
+    float speedLimit = boosting
+        ? player.railBoostMaxSpeed
+        : Mathf.Max(player.railMaxSpeed, _speed);
+
+    _speed = Mathf.Clamp(_speed, player.railMinSpeed, speedLimit);
+
+    // Avança pelo trilho.
+    _distance += _dir * _speed * dt;
+
+    // Chegou na ponta: sai com a velocidade da tangente.
+    if (_distance <= 0f || _distance >= _rail.Length) {
+        _distance = Mathf.Clamp(_distance, 0f, _rail.Length);
+
+        player.rb.linearVelocity = TravelVelocity();
+        player.StateMachine.ChangeState(player.Fall);
+        return;
+    }
+
+    // Mantém o jogador encaixado no trilho.
+    Vector2 targetPos = _rail.GetPoint(_distance) + Vector2.up * _height;
+    Vector2 velocity = (targetPos - player.rb.position) / dt;
+
+    player.rb.linearVelocity = Vector2.ClampMagnitude(velocity, MaxSnapVelocity);
+}
+
+    public override void Exit() {
+        player.SetGravityMultiplier(1f);
+        player.StartRailCooldown();
+
+        // Restaura a rotação original do sprite.
+        if (_visual != null)
+            _visual.localRotation = Quaternion.identity;
+    }
+
+    // Velocidade no sentido do movimento, usada ao soltar do trilho.
+    private Vector2 TravelVelocity() {
+        return _rail.GetTangent(_distance) * (_dir * _speed);
+    }
+
+    // Troca para o trilho de cima (+1) ou de baixo (-1).
+    // Mantém o sentido e a velocidade do movimento.
+    private bool TrySwitchRail(int vertical) {
+        if (!player.FindNeighborRail(
+                _rail,
+                vertical,
+                out RailPath next,
+                out float nextDistance))
+            return false;
+
+        Vector2 travel = _rail.GetTangent(_distance) * _dir;
+        Vector2 nextTangent = next.GetTangent(nextDistance);
+
+        _rail = next;
+        _distance = nextDistance;
+
+        // Ajusta a direção para preservar o sentido do movimento.
+        _dir = travel.x * nextTangent.x >= 0f ? 1 : -1;
+
+        return true;
+    }
+
+    // Inclina somente o sprite. O Rigidbody não gira.
+    private void TiltVisual() {
+        if (!player.railTiltVisual || _visual == null)
+            return;
+
+        Vector2 tangent = _rail.GetTangent(_distance) * _dir;
+
+        float angle = Mathf.Atan2(
+            tangent.y * Mathf.Sign(tangent.x),
+            Mathf.Abs(tangent.x)
+        ) * Mathf.Rad2Deg;
+
+        _visual.localRotation = Quaternion.Slerp(
+            _visual.localRotation,
+            Quaternion.Euler(0f, 0f, angle),
+            player.railTiltSpeed * Time.deltaTime
+        );
+    }
 }
