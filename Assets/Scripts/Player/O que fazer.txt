@@ -1,0 +1,4 @@
+﻿Ultimo commit foi o seguinte:
+Teste de boost e manter a velocidade, ainda precisa de mais refinamentos
+ como um timer de limite além da vel maxima no chão para manter o feel de velocidade ao pular da rail
+
