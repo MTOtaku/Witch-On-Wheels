@@ -208,15 +208,6 @@ public class FallState : PlayerState {
 }
 
 // ------------------------------------------- WallGrab -------------------------------------------
-
-//   1- Encostar na parede entra em WallGrab.
-//   2- WallGrab trava o jogador por <wallGrabDuration> com gravity 0.
-//   3- Se pular durante o WallGrab ativa DoWallJump
-//   4- Se o tempo acabar entra em WallSlide
-//   5- WallSlide: pode pular ou soltar.
-//   6- Após o Wall Jump, o controle horizontal fica travado por <wallJumpControlLockDuration>.
-// Passado esse tempo, o jogador tem controle total novamente podendo virar de direção.
-
 public class WallGrabState : PlayerState {
     private int _wallDir;        // lado da parede ao entrar no estado
 
@@ -500,22 +491,20 @@ public class GrindState : PlayerState {
 
         // Pula para fora do trilho, seguindo a direção do sprite.
         if (player.HasJumpBuffer) {
-            TiltVisual();
-            Vector2 jumpDirection = _visual != null
-                ? (Vector2)_visual.up
-                : Vector2.up;
+            player.StoreRailReturnSpeed(_speed);
+            
+            Vector2 railVelocity = TravelVelocity();
+            
+            player.StateMachine.ChangeState(player.Rise);
+            
+            Vector2 jumpDirection = _visual != null ? (Vector2)_visual.up : Vector2.up;
 
-            // Garante que o impulso seja direcionado para cima.
             if (jumpDirection.y < 0f)
                 jumpDirection *= -1f;
 
             jumpDirection.Normalize();
-            
-            Vector2 jumpVelocity = TravelVelocity() + jumpDirection * player.railJumpForce;
 
-            player.StateMachine.ChangeState(player.Rise);
-            player.rb.linearVelocity = jumpVelocity;
-
+            player.rb.linearVelocity = railVelocity + jumpDirection * player.railJumpForce;
             return;
         }
 

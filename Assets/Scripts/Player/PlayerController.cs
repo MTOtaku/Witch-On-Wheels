@@ -250,6 +250,8 @@ public class PlayerController : MonoBehaviour {
     private const float SwitchHorizontalTolerance = 1.5f;
     private readonly Collider2D[] _railHits = new Collider2D[8];
     private float _railCooldownUntil;
+    private float _railStoredReturnSpeed;
+    private bool _hasRailStoredReturnSpeed;
 
     private void Awake() {
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
@@ -597,6 +599,25 @@ public class PlayerController : MonoBehaviour {
     }
 
     public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
+    
+    // Guarda a velocidade para recuperar quando o jogador retornar ao trilho
+    public void StoreRailReturnSpeed(float speed){
+        _railStoredReturnSpeed = speed;
+        _hasRailStoredReturnSpeed = true;
+    }
+    
+    // Recupera a velocidade armazenada uma unica vez
+    public bool TryConsumeRailReturnSpeed(out float speed){
+        speed =  _railStoredReturnSpeed;
+
+        if (!_hasRailStoredReturnSpeed) {
+            return false;
+        }
+        
+        _hasRailStoredReturnSpeed = false;
+        return true;
+    }
+    
     
     //  ------------------------------------------- Ferramentas de movimento usadas pelos states -------------------------------------------
     public void ConsumeJump() {
