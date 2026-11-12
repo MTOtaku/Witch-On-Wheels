@@ -165,7 +165,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5921, y: 0.5921, z: 0.5921}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5037560469971325825}
@@ -239,7 +239,7 @@ Animator:
   m_GameObject: {fileID: 7412948419816453223}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 9ca9573cb90e58f40b926ce5242e55f0, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -376,7 +376,6 @@ GameObject:
   - component: {fileID: 6637933001461041258}
   - component: {fileID: 5736758868686168418}
   - component: {fileID: 5425852667296280475}
-  - component: {fileID: 4758131890959825388}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -521,11 +520,20 @@ MonoBehaviour:
   railHopInput: 0.5
   railReattachCooldown: 0.25
   railSwitchRange: 3
-  railMinSpeed: 8
-  railMaxSpeed: 18
+  railTimeLimitEnabled: 1
+  railTimeUpgradeLevels:
+  - 45
+  - 60
+  - 90
+  - 120
+  railTimeUpgradeLevel: 0
+  railTimeRechargeRate: 10
+  railTimeRechargeDelay: 1
+  railTimeMinToEnter: 1.5
+  railTimeRemaining: 45
+  railCruiseSpeed: 9
   railAcceleration: 8
-  railDeceleration: 2
-  railSlopeAcceleration: 20
+  railTurnDeceleration: 18
   railBoostAction: {fileID: -7471211009204490832, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   railBoostMaxSpeed: 40
   railBoostAcceleration: 20
@@ -537,40 +545,21 @@ MonoBehaviour:
   railTiltSpeed: 12
   railJumpForce: 12
   railEndLaunchForce: 18
+  railSwitchAnimDuration: 0.3
+  railDropInputThreshold: 0.5
+  railDropIgnoreTime: 0.4
+  railDownSwitchesRail: 1
+  railMomentumDuration: 2
+  railAirTurnDeceleration: 18
   rb: {fileID: 5736758868686168418}
   animator: {fileID: 7842690841514390258}
   moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   isGrounded: 0
   wallDirection: 0
   currentSpeed: 0
   currentVelocity: {x: 0, y: 0}
   currentState: 
-  data: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
-  playerInteractable: {fileID: 1181942870392884863}
---- !u!95 &4758131890959825388
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8250800338139849310}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 9ca9573cb90e58f40b926ce5242e55f0, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &3237273926486509999
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -98,41 +99,57 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Alcance (unidades) para trocar de trilho para cima ou para baixo durante o grind.")]
     public float railSwitchRange = 3f;
 
+    [Header("Rail Grinding - Tempo limite")]
+    [Tooltip("Liga o limite de tempo no trilho. Desligado = tempo ilimitado.")]
+    public bool railTimeLimitEnabled = true;
+
+    [Tooltip("Tempo máximo (s) no trilho em cada nível de upgrade. Elemento 0 = nível 0 (início do jogo, ex.: 45), elemento 1 = nível 1, e assim por diante. Quando o nível chega ao fim da lista, o tempo passa a ser ILIMITADO.")]
+    public float[] railTimeUpgradeLevels = { 45f, 60f, 90f, 120f };
+
+    [Tooltip("Nível atual de upgrade (índice da lista acima). Se for maior ou igual ao tamanho da lista, o tempo é ilimitado. Pelo código: UpgradeRailTime() ou SetRailTimeLevel(n).")]
+    [Min(0)] public int railTimeUpgradeLevel = 0;
+
+    [Tooltip("Tempo (s) de trilho recarregado por segundo quando o Player está FORA do trilho. 0 = não recarrega (o tempo vira um total fixo).")]
+    [Min(0f)] public float railTimeRechargeRate = 10f;
+
+    [Tooltip("Espera (s) depois de sair do trilho antes de começar a recarregar.")]
+    [Min(0f)] public float railTimeRechargeDelay = 1f;
+
+    [Tooltip("Tempo mínimo (s) restante para poder entrar em um trilho. Evita grudar e ser solto no mesmo instante.")]
+    [Min(0f)] public float railTimeMinToEnter = 1.5f;
+
+    [Tooltip("Tempo restante no trilho (leitura). Infinito quando o tempo é ilimitado.")]
+    public float railTimeRemaining = 45f;
+
     [Header("Rail Grinding - Velocidade")]
-    [Tooltip("Velocidade mínima no trilho (unidades por segundo). O Player nunca para.")]
-    public float railMinSpeed = 8f;
+    [Tooltip("Velocidade FIXA do Player no trilho (u/s). Nunca passa da Velocidade máxima de corrida (maxSpeed), nem pelo Inspector.")]
+    [Min(0f)] public float railCruiseSpeed = 9f;
 
-    [Tooltip("Velocidade máxima no trilho.")]
-    public float railMaxSpeed = 18f;
+    [Tooltip("Aceleração (u/s²) até a velocidade fixa do trilho ao entrar ou depois de virar.")]
+    [Min(0.01f)] public float railAcceleration = 12f;
 
-    [Tooltip("Aceleração (u/s²) ao segurar na direção do movimento.")]
-    public float railAcceleration = 8f;
+    [Tooltip("Frenagem (u/s²) ao apertar para o lado OPOSTO no trilho. O Player freia até parar, vira e acelera de novo. Menor = freada mais longa.")]
+    [Min(0.01f)] public float railTurnDeceleration = 18f;
 
-    [Tooltip("Atrito (u/s²): volta devagar à velocidade mínima ao soltar o input. Valor alto cancela o ganho da descida.")]
-    public float railDeceleration = 1f;
-
-    [Tooltip("Efeito da inclinação (u/s²): descida acelera, subida freia.")]
-    public float railSlopeAcceleration = 20f;
-    
     [Header("Rail Grinding - Boost")]
     [Tooltip("Ação do Input System utilizada para ativar o boost.")]
     public InputActionReference railBoostAction;
 
-    [Tooltip("Velocidade máxima que pode ser alcançada durante o boost.")]
+    [Tooltip("Velocidade máxima que pode ser alcançada durante o boost (u/s). O impulso vai para o lado em que o Player aponta.")]
     [Min(0f)] public float railBoostMaxSpeed = 20f;
 
     [Tooltip("Aceleração aplicada enquanto o boost estiver ativo (unidades/s²).")]
     [Min(0f)] public float railBoostAcceleration = 20f;
 
-    [Tooltip("Duração do boost em segundos.")]
+    [Tooltip("Duração do boost em segundos. Ao acabar, é preciso apertar o botão de novo (conta também no ar).")]
     [Min(0.1f)] public float railBoostDuration = 1.5f;
 
-    [Tooltip("Tempo de espera após o término do boost para poder utilizá-lo novamente.")]
+    [Tooltip("Tempo de espera após o término do boost para poder utilizá-lo novamente (conta também fora do trilho).")]
     [Min(0f)] public float railBoostCooldown = 2f;
 
-    [Tooltip("Desaceleração aplicada ao terminar o boost, até retornar à velocidade normal.")]
+    [Tooltip("Desaceleração (u/s²) da velocidade acima da fixa, depois do boost, até voltar à velocidade normal. 0 = mantém a velocidade para sempre.")]
     [Min(0f)] public float railBoostEndDeceleration = 10f;
-    
+
     [Header("Rail Grinding - Visual")]
     [Tooltip("Inclina o sprite seguindo o trilho.")]
     public bool railTiltVisual = true;
@@ -147,15 +164,34 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Força do pulo ao sair do trilho. O impulso segue a direção perpendicular ao sprite, apontando para cima.")]
     [Min(0f)] public float railJumpForce = 12f;
 
-    [Tooltip("Velocidade do lançamento ao chegar ao final do trilho. Segue a inclinação e o sentido do movimento.")]
+    [Tooltip("Força de lançamento PADRÃO (u/s) ao chegar na ponta de um trilho. Só vale nos trilhos com End Launch = PlayerDefault; trilhos Custom usam a própria força. O lançamento segue a inclinação e o sentido do movimento e nunca reduz a velocidade que o Player já tinha.")]
     [Min(0f)] public float railEndLaunchForce = 18f;
+
+    [Header("Rail Grinding - Troca de trilho")]
+    [Tooltip("Tempo (s) em que a animação de troca de trilho toca antes de voltar para a de Grind. Enquanto não existir o estado 'RailSwitch' no Animator, toca a animação de pulo (Rise).")]
+    [Min(0.05f)] public float railSwitchAnimDuration = 0.3f;
+
+    [Header("Rail Grinding - Pulo, Queda e Embalo")]
+    [Tooltip("Valor do input para BAIXO (MoveInputY) que conta como 'segurando baixo'. Baixo + Pulo = descer do trilho.")]
+    [Range(0.1f, 1f)] public float railDropInputThreshold = 0.5f;
+
+    [Tooltip("Tempo (s) em que o trilho do qual o Player desceu é ignorado, para ele cair de verdade e não grudar de novo.")]
+    [Min(0f)] public float railDropIgnoreTime = 0.4f;
+
+    [Tooltip("Se ligado, apertar só BAIXO no trilho troca para o trilho de baixo (quando existir). Desligado (recomendado): baixo só serve para o combo Baixo + Pulo.")]
+    public bool railDownSwitchesRail = false;
+
+    [Tooltip("Tempo (s) que o Player mantém a velocidade horizontal do trilho depois de pular, descer ou sair pela ponta. Também vale para voltar ao trilho com a mesma velocidade. 0 = não mantém. Termina ao pousar ou bater na parede.")]
+    [Min(0f)] public float railMomentumDuration = 2f;
+
+    [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
+    [Min(0.01f)] public float railAirTurnDeceleration = 18f;
     
     [Header("Componentes e Entrada")]
     public Rigidbody2D rb;
     public Animator animator;
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
-    public InputActionReference interactAction;
 
     [Header("Status (leitura)")]
     public bool isGrounded;
@@ -193,6 +229,28 @@ public class PlayerController : MonoBehaviour {
     public bool HasCoyoteTime => _coyoteTimer > 0f;
     public bool IsTouchingWall => wallDirection != 0;
     public bool RailBoostPressed => railBoostAction?.action != null && railBoostAction.action.WasPressedThisFrame();
+
+    // ------------------------------------------- Rail: leitura para o jogo / HUD -------------------------------------------
+    public bool  IsGrinding           { get; private set; }
+    public float RailCruiseSpeed      => Mathf.Min(railCruiseSpeed, maxSpeed);
+    public bool  RailBoostActive      => _railBoostTimer > 0f;
+    public bool  RailBoostReady       => _railBoostTimer <= 0f && _railBoostCooldownTimer <= 0f;
+    public float RailBoostTimeLeft    => _railBoostTimer;
+    public float RailBoostCooldownLeft => _railBoostCooldownTimer;
+    public bool  RailMomentumActive   => _railMomentumTimer > 0f;
+
+    // Troca de trilho: o evento avisa (trilho de origem, trilho de destino, +1 subiu / -1 desceu)
+    public event Action<RailPath, RailPath, int> RailSwitched;
+    public bool IsSwitchingRail       => _railSwitchAnimTimer > 0f;
+    public int  LastRailSwitchDirection { get; private set; }
+
+    public bool  RailTimeIsUnlimited  => !railTimeLimitEnabled || railTimeUpgradeLevels == null ||
+                                         railTimeUpgradeLevels.Length == 0 || railTimeUpgradeLevel >= railTimeUpgradeLevels.Length;
+    public float RailTimeMax          => RailTimeIsUnlimited ? float.PositiveInfinity
+                                         : Mathf.Max(0f, railTimeUpgradeLevels[Mathf.Max(0, railTimeUpgradeLevel)]);
+    public float RailTimeNormalized   => RailTimeIsUnlimited ? 1f
+                                         : (RailTimeMax > 0f ? Mathf.Clamp01(railTimeRemaining / RailTimeMax) : 0f);
+    public bool  CanUseRail           => RailTimeIsUnlimited || railTimeRemaining >= Mathf.Max(railTimeMinToEnter, 0.01f);
 
     // ------------------------------------------- Wall Jump & Wall Grab Tracking -------------------------------------------
     public bool  IsWallJumpLocked    => _wallJumpControlTimer > 0f;
@@ -251,15 +309,25 @@ public class PlayerController : MonoBehaviour {
     private const float SwitchHorizontalTolerance = 1.5f;
     private readonly Collider2D[] _railHits = new Collider2D[8];
     private float _railCooldownUntil;
-    private float _railStoredReturnSpeed;
-    private bool _hasRailStoredReturnSpeed;
 
-    // ------------------------------------------- Player Info ------------------------------------------------------------------
-    
-    [SerializeField] private AvatarData data;
-    // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
+    // Boost (os tempos ficam aqui para continuarem contando fora do trilho)
+    private float _railBoostTimer;
+    private float _railBoostCooldownTimer;
 
-    [SerializeField] private PlayerInteractable playerInteractable;
+    // Tempo no trilho
+    private float _railRechargeDelayTimer;
+
+    // Troca de trilho
+    private float _railSwitchAnimTimer;
+
+    // Embalo depois de sair do trilho
+    private float _railMomentumTimer;
+    private float _railMomentumSpeed;    // velocidade horizontal com sinal
+    private float _railReturnSpeed;      // módulo da velocidade ao longo do trilho
+
+    // Trilho ignorado temporariamente (ex.: depois de descer com Baixo + Pulo)
+    private RailPath _ignoredRail;
+    private float _ignoredRailUntil;
 
     private void Awake() {
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
@@ -268,6 +336,7 @@ public class PlayerController : MonoBehaviour {
         _col = GetComponent<Collider2D>();
         rb.freezeRotation = true;
         _defaultGravity   = rb.gravityScale;
+        RefillRailTime();
 
         StateMachine = new PlayerStateMachine();
         Idle       = new IdleState(this);
@@ -280,6 +349,7 @@ public class PlayerController : MonoBehaviour {
         LedgeGrab  = new LedgeGrabState(this);
         LedgeClimb = new LedgeClimbState(this);
         Grind      = new GrindState(this);
+
         StateMachine.StateChanged += (_, next) =>
             currentState = next != null ? next.GetType().Name : string.Empty;
     }
@@ -288,17 +358,20 @@ public class PlayerController : MonoBehaviour {
         if (moveAction?.action != null) moveAction.action.Enable();
         if (jumpAction?.action != null) jumpAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
-        if (interactAction?.action != null)  interactAction.action.Enable();
     }
 
     private void OnDisable() {
         if (moveAction?.action != null) moveAction.action.Disable();
         if (jumpAction?.action != null) jumpAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
-        if (interactAction?.action != null) interactAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
+
+    private void OnValidate() {
+        railCruiseSpeed = Mathf.Min(railCruiseSpeed, maxSpeed);
+        railTimeUpgradeLevel = Mathf.Max(0, railTimeUpgradeLevel);
+    }
 
     private void Update() {
         ReadInput();
@@ -329,11 +402,6 @@ public class PlayerController : MonoBehaviour {
             if (jumpAction.action.WasPressedThisFrame())  _jumpBufferTimer = jumpBufferTime;
             if (jumpAction.action.WasReleasedThisFrame()) _jumpReleased    = true;
             JumpHeld = jumpAction.action.IsPressed();
-        }
-
-        if(interactAction?.action != null && interactAction.action.WasPressedThisFrame())
-        {
-            playerInteractable.TryExecutInteraction(data);
         }
     }
 
@@ -391,6 +459,50 @@ public class PlayerController : MonoBehaviour {
         if (_wallJumpControlTimer  > 0f) _wallJumpControlTimer  -= Time.deltaTime;
         if (_wallJumpCooldownTimer > 0f) _wallJumpCooldownTimer -= Time.deltaTime;
         if (_ledgeGrabCooldown     > 0f) _ledgeGrabCooldown     -= Time.deltaTime;
+
+        UpdateRailTimers();
+    }
+
+    // Boost, tempo no trilho e embalo. Contam dentro e fora do trilho.
+    private void UpdateRailTimers() {
+        float dt = Time.deltaTime;
+
+        // Boost: ao acabar começa o cooldown. Precisa apertar de novo para reativar.
+        if (_railBoostTimer > 0f) {
+            _railBoostTimer -= dt;
+            if (_railBoostTimer <= 0f) {
+                _railBoostTimer = 0f;
+                _railBoostCooldownTimer = railBoostCooldown;
+            }
+        }
+        else if (_railBoostCooldownTimer > 0f) {
+            _railBoostCooldownTimer -= dt;
+        }
+
+        // Tempo no trilho: recarrega fora do trilho, depois de uma espera
+        float max = RailTimeMax;
+        if (railTimeRemaining > max) railTimeRemaining = max;
+
+        if (!IsGrinding && !RailTimeIsUnlimited) {
+            if (_railRechargeDelayTimer > 0f) _railRechargeDelayTimer -= dt;
+            else if (railTimeRechargeRate > 0f)
+                railTimeRemaining = Mathf.Min(max, railTimeRemaining + railTimeRechargeRate * dt);
+        }
+
+        // Animação de troca de trilho: ao acabar volta para a animação de Grind
+        if (_railSwitchAnimTimer > 0f) {
+            _railSwitchAnimTimer -= dt;
+            if (_railSwitchAnimTimer <= 0f) {
+                _railSwitchAnimTimer = 0f;
+                if (IsGrinding) PlayAnimation(PlayerAnim.Grind);
+            }
+        }
+
+        // Embalo: acaba pelo tempo ou ao pousar
+        if (_railMomentumTimer > 0f) {
+            _railMomentumTimer -= dt;
+            if (_railMomentumTimer <= 0f || isGrounded) ClearRailMomentum();
+        }
     }
 
     
@@ -524,6 +636,8 @@ public class PlayerController : MonoBehaviour {
     public bool TryEnterGrind() {
         if (!railGrindEnabled || _col == null || Time.time < _railCooldownUntil)
             return false;
+
+        if (!CanUseRail) return false;   // sem tempo de trilho sobrando
         
         bool manualRequest = railGrindInput != null &&
                              railGrindInput.action.WasPressedThisFrame();
@@ -556,7 +670,8 @@ public class PlayerController : MonoBehaviour {
         for (int i = 0; i < count; i++) {
             if (!_railHits[i].TryGetComponent(out RailPath rail)) continue;
             if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
-            
+            if (IsRailIgnored(rail)) continue;
+
             if (!manualRequest && !rail.autoGrab) continue;
 
             float distance = rail.GetClosestDistance(feet);
@@ -589,6 +704,7 @@ public class PlayerController : MonoBehaviour {
         for (int i = 0; i < count; i++) {
             if (!_railHits[i].TryGetComponent(out RailPath rail) || rail == current) continue;
             if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
+            if (IsRailIgnored(rail)) continue;
 
             float distance = rail.GetClosestDistance(feet);
             Vector2 point = rail.GetPoint(distance);
@@ -614,25 +730,131 @@ public class PlayerController : MonoBehaviour {
 
     public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
     
-    // Guarda a velocidade para recuperar quando o jogador retornar ao trilho
-    public void StoreRailReturnSpeed(float speed){
-        _railStoredReturnSpeed = speed;
-        _hasRailStoredReturnSpeed = true;
-    }
-    
-    // Recupera a velocidade armazenada uma unica vez
-    public bool TryConsumeRailReturnSpeed(out float speed){
-        speed =  _railStoredReturnSpeed;
+    // ------------------------------------------- Rail: tempo, boost, embalo -------------------------------------------
 
-        if (!_hasRailStoredReturnSpeed) {
-            return false;
-        }
-        
-        _hasRailStoredReturnSpeed = false;
+    // Chamado pelo GrindState ao entrar (true) e sair (false) do trilho
+    // Chamado pelo GrindState quando o Player troca de trilho (ponto único para animação, som, efeitos...)
+    public void NotifyRailSwitched(RailPath from, RailPath to, int direction) {
+        LastRailSwitchDirection = direction;
+        _railSwitchAnimTimer = railSwitchAnimDuration;
+
+        // Sem animação própria ainda: reaproveita a de pulo
+        bool hasOwn = animator != null && animator.runtimeAnimatorController != null &&
+                      animator.HasState(0, PlayerAnim.RailSwitch);
+        PlayAnimation(hasOwn ? PlayerAnim.RailSwitch : PlayerAnim.Rise);
+
+        RailSwitched?.Invoke(from, to, direction);
+    }
+
+    public void SetRailGrinding(bool grinding) {
+        IsGrinding = grinding;
+        if (!grinding) _railSwitchAnimTimer = 0f;
+        if (!grinding) _railRechargeDelayTimer = railTimeRechargeDelay;
+    }
+
+    // Gasta tempo do trilho. Retorna false quando o tempo acabou (o GrindState solta o Player).
+    public bool DrainRailTime(float deltaTime) {
+        if (RailTimeIsUnlimited) return true;
+        railTimeRemaining = Mathf.Max(0f, railTimeRemaining - deltaTime);
+        return railTimeRemaining > 0f;
+    }
+
+    public void RefillRailTime() => railTimeRemaining = RailTimeMax;
+
+    // Sobe um nível de upgrade e enche o tempo. Retorna false se já está ilimitado.
+    public bool UpgradeRailTime() {
+        if (RailTimeIsUnlimited) return false;
+        railTimeUpgradeLevel++;
+        RefillRailTime();
         return true;
     }
-    
-    
+
+    public void SetRailTimeLevel(int level) {
+        railTimeUpgradeLevel = Mathf.Max(0, level);
+        RefillRailTime();
+    }
+
+    // Tenta ligar o boost. Só funciona se não estiver ativo nem em cooldown.
+    public bool TryStartRailBoost() {
+        if (!RailBoostReady) return false;
+        _railBoostTimer = railBoostDuration;
+        return true;
+    }
+
+    // Guarda a velocidade do trilho: no ar mantém a velocidade horizontal e, se voltar ao trilho, recupera o módulo.
+    public void BeginRailMomentum(float horizontalVelocity, float railSpeed) {
+        if (railMomentumDuration <= 0f) { ClearRailMomentum(); return; }
+        _railMomentumTimer = railMomentumDuration;
+        _railMomentumSpeed = horizontalVelocity;
+        StoreRailReturnSpeed(railSpeed);
+    }
+
+    public void StoreRailReturnSpeed(float speed) => _railReturnSpeed = Mathf.Abs(speed);
+
+    // Recupera a velocidade guardada, uma única vez, enquanto o embalo estiver ativo
+    public bool TryConsumeRailReturnSpeed(out float speed) {
+        speed = _railReturnSpeed;
+        if (_railMomentumTimer <= 0f || _railReturnSpeed <= 0f) return false;
+
+        _railReturnSpeed = 0f;
+        return true;
+    }
+
+    public void ClearRailMomentum() {
+        _railMomentumTimer = 0f;
+        _railMomentumSpeed = 0f;
+        _railReturnSpeed   = 0f;
+    }
+
+    // Ignora um trilho por alguns segundos (ex.: depois de descer com Baixo + Pulo)
+    public void IgnoreRailTemporarily(RailPath rail, float seconds) {
+        _ignoredRail = rail;
+        _ignoredRailUntil = Time.time + seconds;
+    }
+
+    // Velocidade mínima de lançamento ao sair pela ponta de um trilho (0 = sem lançamento)
+    public float GetRailEndLaunchSpeed(RailPath rail) {
+        if (rail == null) return 0f;
+
+        switch (rail.endLaunch) {
+            case RailEndLaunch.PlayerDefault: return railEndLaunchForce;
+            case RailEndLaunch.Custom:        return rail.customEndLaunchForce;
+            default:                          return 0f;
+        }
+    }
+
+    private bool IsRailIgnored(RailPath rail) => rail == _ignoredRail && Time.time < _ignoredRailUntil;
+
+    // Mantém a velocidade horizontal do trilho no ar. Retorna true se controlou o movimento neste passo.
+    //   - Apertar para o lado oposto: freia aos poucos até parar; depois o controle normal vira e acelera de novo.
+    //   - Bateu em algo (perdeu velocidade) ou pousou: o embalo termina.
+    private bool HandleRailMomentum(float input) {
+        if (_railMomentumTimer <= 0f || isGrounded) return false;
+
+        float dt = Time.fixedDeltaTime;
+        float vx = rb.linearVelocity.x;
+
+        if (Mathf.Abs(vx) < Mathf.Abs(_railMomentumSpeed) * 0.5f) {
+            ClearRailMomentum();
+            return false;
+        }
+
+        if (input * _railMomentumSpeed < -0.001f) {
+            _railMomentumSpeed = Mathf.MoveTowards(_railMomentumSpeed, 0f, railAirTurnDeceleration * dt);
+            rb.linearVelocity = new Vector2(_railMomentumSpeed, rb.linearVelocity.y);
+
+            if (Mathf.Approximately(_railMomentumSpeed, 0f)) {
+                ClearRailMomentum();
+                return false;
+            }
+            return true;
+        }
+
+        rb.linearVelocity = new Vector2(_railMomentumSpeed, rb.linearVelocity.y);
+        return true;
+    }
+
+
     //  ------------------------------------------- Ferramentas de movimento usadas pelos states -------------------------------------------
     public void ConsumeJump() {
         _jumpBufferTimer = 0f;
@@ -656,8 +878,12 @@ public class PlayerController : MonoBehaviour {
     // Após o lock, o jogador retoma controle total
     public void MoveHorizontal(float input, bool braking = false) {
         if (_wallJumpControlTimer > 0f) {
+            ClearRailMomentum();
             return;
         } // Mantém o impulso horizontal gerado pelo Wall Jump, não deixa o input cancelar imediatamente
+
+        // Embalo vindo do trilho: mantém a velocidade (e freia/vira se o input for oposto)
+        if (HandleRailMomentum(input)) return;
 
         float currentX = rb.linearVelocity.x;
         float targetX  = input * maxSpeed;
@@ -719,5 +945,29 @@ public class PlayerController : MonoBehaviour {
         Gizmos.DrawWireSphere(railCheckPosition, railCheckRadius);
         
         Gizmos.DrawSphere(railCheckPosition, 0.04f);
+
+        // Rail Above Tolerance: ao cair, trilhos ACIMA desta linha são ignorados (só grudam os abaixo dela)
+        float tolY = railCheckPosition.y + railAboveTolerance;
+        float dyTol = Mathf.Min(railAboveTolerance, railCheckRadius);
+        float halfChord = Mathf.Sqrt(Mathf.Max(0f, railCheckRadius * railCheckRadius - dyTol * dyTol));
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawLine(
+            new Vector3(railCheckPosition.x - halfChord, tolY, railCheckPosition.z),
+            new Vector3(railCheckPosition.x + halfChord, tolY, railCheckPosition.z));
+        Gizmos.DrawLine(railCheckPosition, new Vector3(railCheckPosition.x, tolY, railCheckPosition.z));
+
+        // Switch Range: alcance para trocar de trilho (círculo) e a faixa horizontal aceita (linhas verticais)
+        Gizmos.color = new Color(1f, 0.6f, 0f);
+        Gizmos.DrawWireSphere(railCheckPosition, railSwitchRange);
+
+        float zx = SwitchHorizontalTolerance;
+        float h  = railSwitchRange;
+        Gizmos.DrawLine(
+            new Vector3(railCheckPosition.x - zx, railCheckPosition.y - h, railCheckPosition.z),
+            new Vector3(railCheckPosition.x - zx, railCheckPosition.y + h, railCheckPosition.z));
+        Gizmos.DrawLine(
+            new Vector3(railCheckPosition.x + zx, railCheckPosition.y - h, railCheckPosition.z),
+            new Vector3(railCheckPosition.x + zx, railCheckPosition.y + h, railCheckPosition.z));
     }
 }

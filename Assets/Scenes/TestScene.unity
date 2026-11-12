@@ -426,6 +426,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RailPath
   autoGrab: 1
+  endLaunch: 0
+  customEndLaunchForce: 20
   smooth: 1
   samplesPerSegment: 12
   points:
@@ -623,12 +625,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RailPath
   autoGrab: 0
+  endLaunch: 0
+  customEndLaunchForce: 20
   smooth: 1
   samplesPerSegment: 12
   points:
   - {x: -10.112926, y: 14.903536}
-  - {x: -7.525918, y: 0.3446477}
-  - {x: 7.222976, y: -3.3433068}
+  - {x: -9.954072, y: -2.850011}
+  - {x: 1.3067961, y: -3.7246583}
+  - {x: 7.553832, y: 11.815268}
+  - {x: 13.235784, y: -4.1767025}
+  - {x: 22.909542, y: 9.353292}
+  - {x: 48.94596, y: -18.120771}
+  - {x: 71.94749, y: -16.842901}
 --- !u!68 &546307597
 EdgeCollider2D:
   m_ObjectHideFlags: 0
@@ -667,30 +676,90 @@ EdgeCollider2D:
   m_EdgeRadius: 0
   m_Points:
   - {x: -10.112926, y: 14.903536}
-  - {x: -10.026627, y: 14.165424}
-  - {x: -9.972231, y: 13.193762}
-  - {x: -9.933118, y: 12.032698}
-  - {x: -9.89266, y: 10.726382}
-  - {x: -9.834238, y: 9.318962}
-  - {x: -9.741226, y: 7.8545895}
-  - {x: -9.597005, y: 6.377411}
-  - {x: -9.384949, y: 4.931575}
-  - {x: -9.088434, y: 3.5612316}
-  - {x: -8.69084, y: 2.3105297}
-  - {x: -8.175542, y: 1.2236204}
-  - {x: -7.525918, y: 0.3446477}
-  - {x: -6.675707, y: -0.35502863}
-  - {x: -5.6008773, y: -0.9418011}
-  - {x: -4.3481503, y: -1.42814}
-  - {x: -2.9642448, y: -1.8265158}
-  - {x: -1.4958832, y: -2.149399}
-  - {x: 0.010216713, y: -2.40926}
-  - {x: 1.5073333, y: -2.6185691}
-  - {x: 2.9487486, y: -2.7897973}
-  - {x: 4.2877393, y: -2.9354153}
-  - {x: 5.477587, y: -3.0678918}
-  - {x: 6.471574, y: -3.1996992}
-  - {x: 7.222976, y: -3.3433068}
+  - {x: -10.140586, y: 13.99193}
+  - {x: -10.224138, y: 12.776658}
+  - {x: -10.344585, y: 11.317846}
+  - {x: -10.482926, y: 9.67562}
+  - {x: -10.620165, y: 7.910105}
+  - {x: -10.737303, y: 6.0814285}
+  - {x: -10.815339, y: 4.249715}
+  - {x: -10.835278, y: 2.4750886}
+  - {x: -10.778117, y: 0.81767845}
+  - {x: -10.624863, y: -0.66239166}
+  - {x: -10.356512, y: -1.9049959}
+  - {x: -9.954072, y: -2.850011}
+  - {x: -9.388408, y: -3.5661008}
+  - {x: -8.661707, y: -4.1625576}
+  - {x: -7.8019533, y: -4.6401873}
+  - {x: -6.8371234, y: -4.999796}
+  - {x: -5.7951956, y: -5.2421904}
+  - {x: -4.7041497, y: -5.3681765}
+  - {x: -3.5919638, y: -5.3785605}
+  - {x: -2.4866176, y: -5.2741466}
+  - {x: -1.41609, y: -5.055744}
+  - {x: -0.40835905, y: -4.7241583}
+  - {x: 0.50859594, y: -4.2801933}
+  - {x: 1.3067961, y: -3.7246583}
+  - {x: 2.004723, y: -2.9040024}
+  - {x: 2.6446614, y: -1.7196352}
+  - {x: 3.2343345, y: -0.25479752}
+  - {x: 3.7814655, y: 1.4072713}
+  - {x: 4.2937784, y: 3.1833296}
+  - {x: 4.7789965, y: 4.990138}
+  - {x: 5.2448435, y: 6.7444553}
+  - {x: 5.6990423, y: 8.363043}
+  - {x: 6.1493177, y: 9.762656}
+  - {x: 6.6033916, y: 10.860061}
+  - {x: 7.0689893, y: 11.572012}
+  - {x: 7.553832, y: 11.815268}
+  - {x: 8.034407, y: 11.49262}
+  - {x: 8.487325, y: 10.633013}
+  - {x: 8.920494, y: 9.342441}
+  - {x: 9.341829, y: 7.7269006}
+  - {x: 9.759239, y: 5.8923893}
+  - {x: 10.180637, y: 3.9449024}
+  - {x: 10.613934, y: 1.990438}
+  - {x: 11.067038, y: 0.13498878}
+  - {x: 11.547865, y: -1.5154448}
+  - {x: 12.064323, y: -2.8548698}
+  - {x: 12.624324, y: -3.7772865}
+  - {x: 13.235784, y: -4.1767025}
+  - {x: 13.85009, y: -3.952303}
+  - {x: 14.427687, y: -3.1555662}
+  - {x: 14.990049, y: -1.9089344}
+  - {x: 15.558656, y: -0.3348477}
+  - {x: 16.154985, y: 1.444253}
+  - {x: 16.800508, y: 3.3059258}
+  - {x: 17.51671, y: 5.1277294}
+  - {x: 18.325066, y: 6.7872257}
+  - {x: 19.247047, y: 8.16197}
+  - {x: 20.304136, y: 9.129524}
+  - {x: 21.517809, y: 9.567444}
+  - {x: 22.909542, y: 9.353292}
+  - {x: 24.51602, y: 8.407889}
+  - {x: 26.33716, y: 6.8144255}
+  - {x: 28.339277, y: 4.694001}
+  - {x: 30.488703, y: 2.1677217}
+  - {x: 32.751755, y: -0.64330554}
+  - {x: 35.094765, y: -3.6179814}
+  - {x: 37.48405, y: -6.635199}
+  - {x: 39.885933, y: -9.573855}
+  - {x: 42.26674, y: -12.312842}
+  - {x: 44.5928, y: -14.731062}
+  - {x: 46.83043, y: -16.707403}
+  - {x: 48.94596, y: -18.120771}
+  - {x: 51.04222, y: -19.016867}
+  - {x: 53.2214, y: -19.556887}
+  - {x: 55.44883, y: -19.792974}
+  - {x: 57.689854, y: -19.777262}
+  - {x: 59.909798, y: -19.561878}
+  - {x: 62.074005, y: -19.198965}
+  - {x: 64.147804, y: -18.740658}
+  - {x: 66.096535, y: -18.239088}
+  - {x: 67.88553, y: -17.746391}
+  - {x: 69.48013, y: -17.314705}
+  - {x: 70.84567, y: -16.996166}
+  - {x: 71.94749, y: -16.842901}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
@@ -704,7 +773,7 @@ Transform:
   m_GameObject: {fileID: 546307595}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -12.95, y: -0.57, z: 0}
+  m_LocalPosition: {x: -11.72, y: 1.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -842,7 +911,7 @@ Transform:
   m_GameObject: {fileID: 556205985}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.70710677, w: 0.7071068}
-  m_LocalPosition: {x: -24.68, y: 2.77, z: 0}
+  m_LocalPosition: {x: -24.68, y: 6.42, z: 0}
   m_LocalScale: {x: 9.452396, y: 2.7122, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -879,6 +948,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RailPath
   autoGrab: 1
+  endLaunch: 0
+  customEndLaunchForce: 20
   smooth: 0
   samplesPerSegment: 12
   points:
@@ -1113,6 +1184,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RailPath
   autoGrab: 1
+  endLaunch: 0
+  customEndLaunchForce: 20
   smooth: 1
   samplesPerSegment: 12
   points:
@@ -1600,7 +1673,7 @@ Transform:
   m_GameObject: {fileID: 1876522927}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.70710677, w: 0.7071068}
-  m_LocalPosition: {x: -31.82, y: 2.77, z: 0}
+  m_LocalPosition: {x: -31.82, y: 6.42, z: 0}
   m_LocalScale: {x: 9.452396, y: 2.7122, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1637,6 +1710,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RailPath
   autoGrab: 1
+  endLaunch: 0
+  customEndLaunchForce: 20
   smooth: 1
   samplesPerSegment: 12
   points:
@@ -1920,11 +1995,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5037560469971325825, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 15.1
+      value: 23.49
       objectReference: {fileID: 0}
     - target: {fileID: 5037560469971325825, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -15.5
+      value: -16.47
       objectReference: {fileID: 0}
     - target: {fileID: 5037560469971325825, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1957,6 +2032,18 @@ PrefabInstance:
     - target: {fileID: 5037560469971325825, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+      propertyPath: railSwitchRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+      propertyPath: railDownSwitchesRail
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+      propertyPath: railBoostAcceleration
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 8250800338139849310, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_Name

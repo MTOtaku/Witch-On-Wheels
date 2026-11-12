@@ -12,6 +12,7 @@ public static class PlayerAnim {
     public static readonly int LedgeGrab  = Animator.StringToHash("LedgeGrab");
     public static readonly int LedgeClimb = Animator.StringToHash("LedgeClimb");
     public static readonly int Grind      = Animator.StringToHash("Grind");
+    public static readonly int RailSwitch = Animator.StringToHash("RailSwitch");   // ainda sem animação: usa a de pulo (Rise)
 }
 
 // -------------------------------------------  Base dos estados no chão -------------------------------------------
@@ -424,20 +425,27 @@ public class LedgeClimbState : PlayerState {
 }
 
 // ------------------------------------------- Grind -------------------------------------------
+// Rail Grinding:
+//   - Anda por DISTÂNCIA no RailPath, com a gravidade em 0. Só este estado mexe no Rigidbody2D.
+//   - Velocidade FIXA (railCruiseSpeed). Apertar para o lado oposto freia, vira e acelera de novo.
+//   - Boost (botão): impulso para o lado em que o Player aponta; tempo e cooldown ficam no PlayerController.
+//   - Pulo: sai mantendo a velocidade (embalo). Baixo + Pulo: desce do trilho.
+//   - O tempo no trilho é limitado (com upgrades). Acabou o tempo -> solta o Player.
 public class GrindState : PlayerState {
     // Limite da velocidade usada para encaixar no trilho.
     // Evita deslocamentos excessivos caso o Player esteja longe do ponto.
     private const float MaxSnapVelocity = 60f;
 
+    // Abaixo disso o trecho do trilho é considerado vertical (o lado esquerda/direita não decide o sentido)
+    private const float VerticalTangentThreshold = 0.05f;
+
     private RailPath _rail;
     private float _distance;
-    private int _dir = 1;          // +1 ou -1 ao longo do trilho
-    private float _speed;          // velocidade ao longo do trilho
+    private float _speed;          // velocidade COM SINAL ao longo do trilho (+ = rumo ao fim, - = rumo ao início)
+    private int _side = 1;         // lado do mundo para onde o Player aponta: +1 direita, -1 esquerda
     private float _height;         // distância do pivô do Player até os pés
     private float _prevInputY;
     private Transform _visual;
-    private float _boostTimer;
-    private float _boostCooldownTimer;
 
     public GrindState(PlayerController player) : base(player) { }
 
@@ -455,29 +463,27 @@ public class GrindState : PlayerState {
 
         Vector2 tangent = _rail.GetTangent(_distance);
 
-        // Direção: movimento horizontal atual ou input.
-        // Se estiver parado, começa para a direita.
-        float vx = Mathf.Abs(player.VelocityX) > 0.5f
-            ? player.VelocityX
-            : (player.HasInput ? player.MoveInput : 0f);
+        // Lado: input atual, senão o movimento horizontal. Parado: o lado para onde o trilho segue.
+        if (player.HasInput)                       _side = player.MoveInput > 0f ? 1 : -1;
+        else if (Mathf.Abs(player.VelocityX) > 0.5f) _side = player.VelocityX > 0f ? 1 : -1;
+        else                                       _side = tangent.x >= 0f ? 1 : -1;
 
-        if (vx != 0f)
-            _dir = vx * tangent.x >= 0f ? 1 : -1;
-        else
-            _dir = tangent.x >= 0f ? 1 : -1;
+        float alongSign = SideToAlongSign(tangent);
 
-        // Preserva o embalo que o Player já tinha ao entrar no trilho.
-        float along = Vector2.Dot(
-            player.rb.linearVelocity,
-            tangent * _dir
-        );
+        // Velocidade ao entrar: a guardada do pulo (volta com a mesma velocidade) ou o embalo atual
+        float magnitude;
+        if (player.TryConsumeRailReturnSpeed(out float stored)) {
+            magnitude = stored;
+        }
+        else {
+            magnitude = Mathf.Max(0f, Vector2.Dot(player.rb.linearVelocity, tangent * alongSign));
+        }
 
-        _speed = Mathf.Clamp(
-            along,
-            player.railMinSpeed,
-            player.railMaxSpeed
-        );
+        magnitude = Mathf.Min(magnitude, Mathf.Max(player.railBoostMaxSpeed, player.RailCruiseSpeed));
+        _speed = alongSign * magnitude;
 
+        player.ClearRailMomentum();   // a partir daqui quem controla é o trilho
+        player.SetRailGrinding(true);
         player.SetGravityMultiplier(0f);
         player.PlayAnimation(PlayerAnim.Grind);
     }
@@ -489,22 +495,22 @@ public class GrindState : PlayerState {
             return;
         }
 
-        // Pula para fora do trilho, seguindo a direção do sprite.
+        // Acabou o tempo de trilho: solta o Player mantendo a velocidade.
+        if (!player.DrainRailTime(Time.deltaTime)) {
+            Release(player.Fall);
+            return;
+        }
+
+        // Pulo. Com Baixo segurado, desce do trilho em vez de pular.
         if (player.HasJumpBuffer) {
-            player.StoreRailReturnSpeed(_speed);
-            
-            Vector2 railVelocity = TravelVelocity();
-            
-            player.StateMachine.ChangeState(player.Rise);
-            
-            Vector2 jumpDirection = _visual != null ? (Vector2)_visual.up : Vector2.up;
-
-            if (jumpDirection.y < 0f)
-                jumpDirection *= -1f;
-
-            jumpDirection.Normalize();
-
-            player.rb.linearVelocity = railVelocity + jumpDirection * player.railJumpForce;
+            if (player.MoveInputY < -player.railDropInputThreshold) {
+                player.ConsumeJump();
+                player.IgnoreRailTemporarily(_rail, player.railDropIgnoreTime);
+                Release(player.Fall, dropDown: true);
+            }
+            else {
+                Release(player.Rise, jump: true);
+            }
             return;
         }
 
@@ -516,108 +522,62 @@ public class GrindState : PlayerState {
 
         _prevInputY = y;
 
-        // Tenta trocar para o trilho acima.
-        if (upPressed && TrySwitchRail(+1))
-            return;
+        if (upPressed && TrySwitchRail(+1)) return;
+        if (downPressed && player.railDownSwitchesRail && TrySwitchRail(-1)) return;
 
-        // Tenta trocar para o trilho abaixo.
-        if (downPressed) {
-            if (TrySwitchRail(-1))
-                return;
-
-            // Não existe trilho abaixo: solta.
-            player.rb.linearVelocity = TravelVelocity();
-            player.StateMachine.ChangeState(player.Fall);
-            return;
-        }
-        
-        // Ativa o boost caso esteja disponível.
-        if (player.RailBoostPressed &&
-            _boostTimer <= 0f &&
-            _boostCooldownTimer <= 0f) {
-
-            _boostTimer = player.railBoostDuration;
-        }
+        // Boost: só liga se não estiver ativo nem em cooldown.
+        if (player.RailBoostPressed) player.TryStartRailBoost();
 
         TiltVisual();
     }
 
     public override void PhysicsTick() {
-    if (_rail == null || !_rail.IsValid) return;
+        if (_rail == null || !_rail.IsValid) return;
 
-    float dt = Time.fixedDeltaTime;
+        float dt = Time.fixedDeltaTime;
 
-    // Atualiza o tempo do boost e inicia o cooldown ao terminar.
-    if (_boostTimer > 0f) {
-        _boostTimer -= dt;
+        // O Player aponta para o último lado apertado e continua nele ao soltar o input.
+        if (player.HasInput) _side = player.MoveInput > 0f ? 1 : -1;
 
-        if (_boostTimer <= 0f) {
-            _boostTimer = 0f;
-            _boostCooldownTimer = player.railBoostCooldown;
+        Vector2 tangent = _rail.GetTangent(_distance);
+        float alongSign = SideToAlongSign(tangent);
+
+        // Velocidade alvo: fixa, ou a do boost enquanto ele durar. O sinal vem do lado apontado.
+        bool boosting = player.RailBoostActive;
+        float targetMagnitude = boosting
+            ? Mathf.Max(player.railBoostMaxSpeed, player.RailCruiseSpeed)
+            : player.RailCruiseSpeed;
+        float target = alongSign * targetMagnitude;
+
+        // Aceleração / frenagem
+        float rate;
+        if (_speed * target < 0f)                        rate = player.railTurnDeceleration;      // indo para o lado oposto: freia até parar
+        else if (boosting)                               rate = player.railBoostAcceleration;
+        else if (Mathf.Abs(_speed) > targetMagnitude)    rate = player.railBoostEndDeceleration;  // sobra do boost
+        else                                             rate = player.railAcceleration;
+
+        _speed = Mathf.MoveTowards(_speed, target, rate * dt);
+
+        // Avança pelo trilho (velocidade constante em curvas e retas).
+        _distance += _speed * dt;
+
+        // Chegou na ponta: sai com a velocidade da tangente.
+        if (_distance <= 0f || _distance >= _rail.Length) {
+            _distance = Mathf.Clamp(_distance, 0f, _rail.Length);
+            Release(player.Fall, endOfRail: true);
+            return;
         }
+
+        // Mantém o jogador encaixado no trilho.
+        Vector2 targetPos = _rail.GetPoint(_distance) + Vector2.up * _height;
+        Vector2 velocity = (targetPos - player.rb.position) / dt;
+
+        player.rb.linearVelocity = Vector2.ClampMagnitude(velocity, MaxSnapVelocity);
     }
-    else if (_boostCooldownTimer > 0f) {
-        _boostCooldownTimer -= dt;
-    }
-
-    Vector2 tangent = _rail.GetTangent(_distance) * _dir;
-
-    bool boosting = _boostTimer > 0f;
-
-    // Verifica se o jogador está pressionando na direção do movimento.
-    bool pushing = player.HasInput &&
-                   player.MoveInput * tangent.x > 0f;
-    
-    float target;
-    float rate;
-
-    if (boosting) {
-        target = player.railBoostMaxSpeed;
-        rate = player.railBoostAcceleration;
-    }
-    else {
-        target = pushing ? player.railMaxSpeed : player.railMinSpeed;
-
-        // Se ainda estiver acima da velocidade normal após o boost, desacelera gradualmente até voltar ao limite normal.
-        if (_speed > player.railMaxSpeed)
-            rate = player.railBoostEndDeceleration;
-        else
-            rate = pushing ? player.railAcceleration : player.railDeceleration;
-    }
-
-    _speed = Mathf.MoveTowards(_speed, target, rate * dt);
-
-    // A inclinação continua influenciando a velocidade.
-    _speed -= tangent.y * player.railSlopeAcceleration * dt;
-
-    // Durante o boost, permite alcançar uma velocidade maior, ao terminar, não corta instantaneamente a velocidade excedente.
-    float speedLimit = boosting
-        ? player.railBoostMaxSpeed
-        : Mathf.Max(player.railMaxSpeed, _speed);
-
-    _speed = Mathf.Clamp(_speed, player.railMinSpeed, speedLimit);
-
-    // Avança pelo trilho.
-    _distance += _dir * _speed * dt;
-
-    // Chegou na ponta: sai com a velocidade da tangente.
-    if (_distance <= 0f || _distance >= _rail.Length) {
-        _distance = Mathf.Clamp(_distance, 0f, _rail.Length);
-
-        player.rb.linearVelocity = TravelVelocity();
-        player.StateMachine.ChangeState(player.Fall);
-        return;
-    }
-
-    // Mantém o jogador encaixado no trilho.
-    Vector2 targetPos = _rail.GetPoint(_distance) + Vector2.up * _height;
-    Vector2 velocity = (targetPos - player.rb.position) / dt;
-
-    player.rb.linearVelocity = Vector2.ClampMagnitude(velocity, MaxSnapVelocity);
-}
 
     public override void Exit() {
         player.SetGravityMultiplier(1f);
+        player.SetRailGrinding(false);
         player.StartRailCooldown();
 
         // Restaura a rotação original do sprite.
@@ -625,9 +585,39 @@ public class GrindState : PlayerState {
             _visual.localRotation = Quaternion.identity;
     }
 
+    // Sentido ao longo do trilho (+1 / -1) que leva o Player ao lado do mundo que ele aponta.
+    private float SideToAlongSign(Vector2 tangent) {
+        if (Mathf.Abs(tangent.x) > VerticalTangentThreshold)
+            return _side * Mathf.Sign(tangent.x);
+
+        return Mathf.Sign(_speed);   // trecho vertical: mantém o sentido atual
+    }
+
     // Velocidade no sentido do movimento, usada ao soltar do trilho.
-    private Vector2 TravelVelocity() {
-        return _rail.GetTangent(_distance) * (_dir * _speed);
+    private Vector2 TravelVelocity() => _rail.GetTangent(_distance) * _speed;
+
+    // Sai do trilho mantendo a velocidade. Muda de estado ANTES de definir a velocidade
+    // (o RiseState.Enter define a velocidade vertical do pulo comum).
+    private void Release(PlayerState next, bool jump = false, bool dropDown = false, bool endOfRail = false) {
+        Vector2 travel = TravelVelocity();
+        float travelSpeed = Mathf.Abs(_speed);
+
+        // Ponta do trilho: aplica a força de lançamento deste trilho (nunca reduz a velocidade atual)
+        if (endOfRail && travelSpeed > 0.01f) {
+            float launch = player.GetRailEndLaunchSpeed(_rail);
+            if (launch > travelSpeed) {
+                travel = travel.normalized * launch;
+                travelSpeed = launch;
+            }
+        }
+
+        player.StateMachine.ChangeState(next);
+
+        if (jump)          player.rb.linearVelocity = new Vector2(travel.x, Mathf.Max(travel.y, 0f) + player.railJumpForce);
+        else if (dropDown) player.rb.linearVelocity = new Vector2(travel.x, Mathf.Min(travel.y, 0f));
+        else               player.rb.linearVelocity = travel;
+
+        player.BeginRailMomentum(travel.x, travelSpeed);
     }
 
     // Troca para o trilho de cima (+1) ou de baixo (-1).
@@ -640,14 +630,18 @@ public class GrindState : PlayerState {
                 out float nextDistance))
             return false;
 
-        Vector2 travel = _rail.GetTangent(_distance) * _dir;
+        Vector2 travel = _rail.GetTangent(_distance) * _speed;
         Vector2 nextTangent = next.GetTangent(nextDistance);
 
+        RailPath previous = _rail;
         _rail = next;
         _distance = nextDistance;
 
-        // Ajusta a direção para preservar o sentido do movimento.
-        _dir = travel.x * nextTangent.x >= 0f ? 1 : -1;
+        // Ajusta o sinal para preservar o sentido do movimento.
+        _speed = Mathf.Abs(_speed) * (travel.x * nextTangent.x >= 0f ? 1f : -1f);
+
+        // Avisa a troca (animação + evento). Aqui é o único ponto onde a troca acontece.
+        player.NotifyRailSwitched(previous, next, vertical);
 
         return true;
     }
@@ -657,11 +651,12 @@ public class GrindState : PlayerState {
         if (!player.railTiltVisual || _visual == null)
             return;
 
-        Vector2 tangent = _rail.GetTangent(_distance) * _dir;
+        Vector2 tangent = _rail.GetTangent(_distance);
+        Vector2 t = tangent * SideToAlongSign(tangent);
 
         float angle = Mathf.Atan2(
-            tangent.y * Mathf.Sign(tangent.x),
-            Mathf.Abs(tangent.x)
+            t.y * Mathf.Sign(t.x),
+            Mathf.Abs(t.x)
         ) * Mathf.Rad2Deg;
 
         _visual.localRotation = Quaternion.Slerp(
