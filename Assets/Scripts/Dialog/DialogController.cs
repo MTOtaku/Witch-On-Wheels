@@ -29,12 +29,14 @@ public class DialogController : MonoBehaviour
             BubbleChatController currentChat = null;
             currentChat = avatarsChatController.Find(x => x.Avatar.AvatarName == currentDialogData.Avatar.AvatarName);
             currentChat?.ShowChat(true);
+            isShowingMessage = true;
             currentChat?.SetupBubbleDialog(currentDialogData, FinishWriteDialogSentence);
             yield return new WaitUntil(() => !isShowingMessage);
             yield return new WaitForSeconds(1.0f);
             
         }
         HideAllChats();
+        ObjectPoolManager.ReturnObjectToPool(this.gameObject, PoolType.DialogSystem);
     }
 
     private void FinishWriteDialogSentence()
