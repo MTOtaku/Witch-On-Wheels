@@ -212,6 +212,7 @@ Transform:
   m_Children:
   - {fileID: 2441082890445810391}
   - {fileID: 5044510298139777439}
+  - {fileID: 135166646112862214}
   m_Father: {fileID: 3961917053620222252}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6146418244271222585
@@ -350,6 +351,84 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a710991e935da484db46e7289a6b1c7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BubbleChatController
-  avatar: {fileID: 0}
+  avatar: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
   body: {fileID: 6020928115051115206}
   bubbleDialogue: {fileID: 9088406807261513726}
+  finishBubbleButton: {fileID: 7927716889300489455}
+--- !u!1001 &3727484178786511746
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1446097535965382408}
+    m_Modifications:
+    - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_text
+      value: '>>>'
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3810827245440813369, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+      propertyPath: m_Name
+      value: GenericButton2D
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+--- !u!4 &135166646112862214 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3628382074055732100, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+  m_PrefabInstance: {fileID: 3727484178786511746}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7927716889300489455 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6754915237262770029, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
+  m_PrefabInstance: {fileID: 3727484178786511746}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e57fef3cf44ce4dbb3de0827fba325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericButton2D

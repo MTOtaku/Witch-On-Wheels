@@ -9,8 +9,13 @@ public class BubbleChatController : MonoBehaviour
     public AvatarData Avatar => avatar;
     [SerializeField] private GameObject body;
     [SerializeField] private TextMeshPro bubbleDialogue;
+    [SerializeField] private GenericButton2D finishBubbleButton;
     private Action dialogFinishCallBack;
 
+    void Start()
+    {
+        finishBubbleButton.SetupButton(FinishDialog);
+    }
     public void ShowChat(bool isShow)
     {
         body.SetActive(isShow);
@@ -42,6 +47,11 @@ public class BubbleChatController : MonoBehaviour
             yield return new WaitForSeconds(dialog.CharacterDisplayDelay);
             count++;
         }
+
+    }
+
+    private void FinishDialog()
+    {
         dialogFinishCallBack?.Invoke();
     }
 }
