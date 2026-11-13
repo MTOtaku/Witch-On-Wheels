@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,7 +8,9 @@ public class DialogController : MonoBehaviour
     [SerializeField] private DialogData dialogData;
     [SerializeField] private List<BubbleChatController> avatarsChatController = new List<BubbleChatController>();
     [SerializeField] private bool isShowingMessage;
-    public void SetupDialog(DialogData newDialog, List<BubbleChatController> avatarChats)
+
+    [SerializeField] private Action finishDialogCallback;
+    public void SetupDialog(DialogData newDialog, List<BubbleChatController> avatarChats, Action finishCallback = null)
     {
         avatarsChatController.Clear();
         foreach (var chat in avatarChats)
@@ -15,6 +18,7 @@ public class DialogController : MonoBehaviour
             avatarsChatController.Add(chat);
         }
         dialogData = newDialog;
+        finishDialogCallback = finishCallback;
         StartCoroutine(StartDialog());
     }
 
@@ -32,11 +36,10 @@ public class DialogController : MonoBehaviour
             isShowingMessage = true;
             currentChat?.SetupBubbleDialog(currentDialogData, FinishWriteDialogSentence);
             yield return new WaitUntil(() => !isShowingMessage);
-            yield return new WaitForSeconds(1.0f);
-            
         }
         HideAllChats();
         ObjectPoolManager.ReturnObjectToPool(this.gameObject, PoolType.DialogSystem);
+        finishDialogCallback?.Invoke();
     }
 
     private void FinishWriteDialogSentence()

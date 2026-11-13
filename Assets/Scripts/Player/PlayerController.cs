@@ -192,6 +192,7 @@ public class PlayerController : MonoBehaviour {
     public Animator animator;
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
+    public InputActionReference interactAction;
 
     [Header("Status (leitura)")]
     public bool isGrounded;
@@ -329,6 +330,13 @@ public class PlayerController : MonoBehaviour {
     private RailPath _ignoredRail;
     private float _ignoredRailUntil;
 
+    // ------------------------------------------- Player Info ------------------------------------------------------------------
+    
+    [SerializeField] private AvatarData data;
+    // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
+
+    [SerializeField] private PlayerInteractable playerInteractable;
+
     private void Awake() {
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
@@ -358,12 +366,14 @@ public class PlayerController : MonoBehaviour {
         if (moveAction?.action != null) moveAction.action.Enable();
         if (jumpAction?.action != null) jumpAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
+        if (interactAction?.action != null)  interactAction.action.Enable();
     }
 
     private void OnDisable() {
         if (moveAction?.action != null) moveAction.action.Disable();
         if (jumpAction?.action != null) jumpAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
+        if (interactAction?.action != null) interactAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
@@ -402,6 +412,11 @@ public class PlayerController : MonoBehaviour {
             if (jumpAction.action.WasPressedThisFrame())  _jumpBufferTimer = jumpBufferTime;
             if (jumpAction.action.WasReleasedThisFrame()) _jumpReleased    = true;
             JumpHeld = jumpAction.action.IsPressed();
+        }
+
+        if(interactAction?.action != null && interactAction.action.WasPressedThisFrame())
+        {
+            playerInteractable.TryExecutInteraction(data);
         }
     }
 
