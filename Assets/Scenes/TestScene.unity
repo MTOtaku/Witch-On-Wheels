@@ -2033,18 +2033,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
-      propertyPath: railSwitchRange
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
-      propertyPath: railDownSwitchesRail
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
-      propertyPath: railBoostAcceleration
-      value: 40
-      objectReference: {fileID: 0}
     - target: {fileID: 8250800338139849310, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: m_Name
       value: Player
