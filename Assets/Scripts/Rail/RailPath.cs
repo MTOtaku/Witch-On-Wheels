@@ -2,6 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Como o trilho lança o Player ao chegar na ponta
+public enum RailEndLaunch {
+    None,            // sai com a velocidade que já tinha
+    PlayerDefault,   // usa a "Força de lançamento" padrão do PlayerController (railEndLaunchForce)
+    Custom           // usa a força definida neste trilho
+}
+
 // Trilho como uma curva amostrada por distancia:
 // dado "d" (unidades percorridas desde o início), devolve a posição e a direção do trilho.
 [ExecuteAlways]
@@ -9,6 +16,12 @@ using UnityEngine;
 public class RailPath : MonoBehaviour {
     [Tooltip("Gruda sozinho quando o Player cai em cima. Desmarque para trilhos no chão: o Player precisa apertar para cima.")]
     public bool autoGrab = true;
+
+    [Tooltip("Lançamento ao chegar na ponta do trilho (em qualquer das pontas, no sentido do movimento). None = sai com a velocidade que tinha. PlayerDefault = usa a força padrão do Player. Custom = usa a força abaixo.")]
+    public RailEndLaunch endLaunch = RailEndLaunch.None;
+
+    [Tooltip("Velocidade (u/s) do lançamento deste trilho. Só vale com End Launch = Custom. Nunca reduz a velocidade que o Player já tinha: se ele chegar mais rápido, sai mais rápido.")]
+    [Min(0f)] public float customEndLaunchForce = 20f;
 
     [Tooltip("Suaviza a linha entre os pontos (Catmull-Rom). Desmarque para seguir os pontos em linha reta.")]
     public bool smooth = true;
