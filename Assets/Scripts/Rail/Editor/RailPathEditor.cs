@@ -14,6 +14,9 @@ public class RailPathEditor : Editor {
         var rail = (RailPath)target;
         Transform tr = rail.transform;
 
+        // Com Sprite Shape, a curva é editada na ferramenta do próprio Sprite Shape
+        if (rail.spriteShape != null) return;
+
         // Arrastar os pontos
         for (int i = 0; i < rail.points.Count; i++) {
             Vector3 world = tr.TransformPoint(rail.points[i]);
@@ -58,7 +61,12 @@ public class RailPathEditor : Editor {
         var rail = (RailPath)target;
 
         EditorGUILayout.Space();
-        EditorGUILayout.HelpBox("Arraste os pontos amarelos na Scene.\nShift + clique: adiciona ponto no fim.", MessageType.Info);
+        if (rail.spriteShape != null) {
+            EditorGUILayout.HelpBox("A curva vem do Sprite Shape. Edite os pontos com a ferramenta do Sprite Shape Controller e deixe o 'Update Collider' dele DESLIGADO.", MessageType.Info);
+        }
+        else {
+            EditorGUILayout.HelpBox("Arraste os pontos amarelos na Scene.\nShift + clique: adiciona ponto no fim.", MessageType.Info);
+        }
         EditorGUILayout.LabelField("Comprimento", rail.Length.ToString("F2") + " unidades");
 
         if (GUILayout.Button("Remover último ponto") && rail.points.Count > 2) {
