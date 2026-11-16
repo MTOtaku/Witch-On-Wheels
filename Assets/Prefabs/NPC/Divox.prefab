@@ -16,13 +16,33 @@ PrefabInstance:
       propertyPath: m_Name
       value: Divox
       objectReference: {fileID: 0}
+    - target: {fileID: 7978970240591610894, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
+      propertyPath: npcState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978970240591610894, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
+      propertyPath: hasQuestToGiveDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: b9a514d325c687d48ae174969347d4c8, type: 2}
+    - target: {fileID: 7978970240591610894, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
+      propertyPath: questCompletedDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 6ebf3eb88e0856743813c2452b9a8c30, type: 2}
+    - target: {fileID: 7978970240591610894, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
+      propertyPath: waitingToFinishQuestDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: abd417d05c7a44f4fb361de9a49abd90, type: 2}
+    - target: {fileID: 7978970240591610894, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
+      propertyPath: preRequisiteQuestToShowQuest
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 8782574110478085564, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 38
+      value: 27.13
       objectReference: {fileID: 0}
     - target: {fileID: 8782574110478085564, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -8.1
+      value: -17.64
       objectReference: {fileID: 0}
     - target: {fileID: 8782574110478085564, guid: 7ff2645ad1fdd634a9e4c0944f3fca59, type: 3}
       propertyPath: m_LocalPosition.z
