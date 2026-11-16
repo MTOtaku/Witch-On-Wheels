@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.U2D;
 
 // Como o trilho lança o Player ao chegar na ponta
 public enum RailEndLaunch {
@@ -23,6 +24,9 @@ public class RailPath : MonoBehaviour {
     [Tooltip("Velocidade (u/s) do lançamento deste trilho. Só vale com End Launch = Custom. Nunca reduz a velocidade que o Player já tinha: se ele chegar mais rápido, sai mais rápido.")]
     [Min(0f)] public float customEndLaunchForce = 20f;
 
+    [Tooltip("Opcional: Sprite Shape Controller (shape ABERTO) que desenha este trilho. Quando preenchido, o trilho e o Edge Collider seguem a curva do Sprite Shape (editada com a ferramenta do próprio Sprite Shape) e os pontos amarelos do Rail Path deixam de ser usados. Desligue o 'Update Collider' do Sprite Shape Controller: quem atualiza o collider é o Rail Path.")]
+    public SpriteShapeController spriteShape;
+
     [Tooltip("Suaviza a linha entre os pontos (Catmull-Rom). Desmarque para seguir os pontos em linha reta.")]
     public bool smooth = true;
 
@@ -44,8 +48,18 @@ public class RailPath : MonoBehaviour {
     public bool IsValid => _samples.Length >= 2 && Length > 0.001f;
     public IReadOnlyList<Vector2> LocalSamples => _samples;
 
+    private int _splineHash;
+
     private void OnEnable() => Rebuild();
     private void OnValidate() => Rebuild();
+
+#if UNITY_EDITOR
+    // Editando a curva do Sprite Shape na Scene, o trilho e o collider acompanham na hora
+    private void Update() {
+        if (Application.isPlaying || spriteShape == null) return;
+        if (ComputeSplineHash() != _splineHash) Rebuild();
+    }
+#endif
 
     // Trocar os pontos por código (ex.: cabo entre duas âncoras, trilho gerado de Tilemap)
     public void SetPoints(List<Vector2> newPoints, bool useSmooth) {
@@ -57,7 +71,9 @@ public class RailPath : MonoBehaviour {
     // Se mudar a ESCALA do objeto, use o menu de contexto do componente para recalcular
     [ContextMenu("Rebuild")]
     public void Rebuild() {
-        if (points == null || points.Count < 2) {
+        bool useShape = spriteShape != null && spriteShape.spline != null && spriteShape.spline.GetPointCount() >= 2;
+
+        if (!useShape && (points == null || points.Count < 2)) {
             _samples = Array.Empty<Vector2>();
             _cumulative = Array.Empty<float>();
             return;
@@ -65,7 +81,11 @@ public class RailPath : MonoBehaviour {
 
         // 1) Amostra a curva
         var raw = new List<Vector2>();
-        if (smooth) {
+        if (useShape) {
+            SampleSpriteShape(raw);
+            _splineHash = ComputeSplineHash();
+        }
+        else if (smooth) {
             for (int i = 0; i < points.Count - 1; i++) {
                 for (int s = 0; s < samplesPerSegment; s++) {
                     raw.Add(CatmullRom(i, s / (float)samplesPerSegment));
@@ -107,6 +127,63 @@ public class RailPath : MonoBehaviour {
         }
 
         Rebuilt?.Invoke();
+    }
+
+    // Amostra a curva Bézier do Sprite Shape (posições e tangentes dos pontos) e converte para o espaço local deste trilho
+    private void SampleSpriteShape(List<Vector2> output) {
+        Spline spline = spriteShape.spline;
+        int count = spline.GetPointCount();
+        int segments = spline.isOpenEnded ? count - 1 : count;
+
+        for (int i = 0; i < segments; i++) {
+            int j = (i + 1) % count;
+
+            bool linearA = spline.GetTangentMode(i) == ShapeTangentMode.Linear;
+            bool linearB = spline.GetTangentMode(j) == ShapeTangentMode.Linear;
+
+            Vector3 p0 = spline.GetPosition(i);
+            Vector3 p3 = spline.GetPosition(j);
+            Vector3 p1 = p0 + (linearA ? Vector3.zero : spline.GetRightTangent(i));
+            Vector3 p2 = p3 + (linearB ? Vector3.zero : spline.GetLeftTangent(j));
+
+            int steps = linearA && linearB ? 1 : samplesPerSegment;
+            for (int s = 0; s < steps; s++) {
+                output.Add(ShapeToLocal(Bezier(p0, p1, p2, p3, s / (float)steps)));
+            }
+
+            if (i == segments - 1) output.Add(ShapeToLocal(p3));
+        }
+    }
+
+    private static Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t) {
+        float u = 1f - t;
+        return u * u * u * p0 + 3f * u * u * t * p1 + 3f * u * t * t * p2 + t * t * t * p3;
+    }
+
+    private Vector2 ShapeToLocal(Vector3 shapePoint) {
+        Vector3 world = spriteShape.transform.TransformPoint(shapePoint);
+        return transform.InverseTransformPoint(world);
+    }
+
+    // Muda quando a curva (ou a posição do objeto) muda
+    private int ComputeSplineHash() {
+        if (spriteShape == null || spriteShape.spline == null) return 0;
+
+        Spline spline = spriteShape.spline;
+        int count = spline.GetPointCount();
+
+        unchecked {
+            int hash = count * 31 + (spline.isOpenEnded ? 1 : 0);
+            for (int i = 0; i < count; i++) {
+                hash = hash * 31 + spline.GetPosition(i).GetHashCode();
+                hash = hash * 31 + spline.GetLeftTangent(i).GetHashCode();
+                hash = hash * 31 + spline.GetRightTangent(i).GetHashCode();
+                hash = hash * 31 + (int)spline.GetTangentMode(i);
+            }
+            hash = hash * 31 + spriteShape.transform.localToWorldMatrix.GetHashCode();
+            hash = hash * 31 + transform.localToWorldMatrix.GetHashCode();
+            return hash;
+        }
     }
 
     // Catmull-Rom uniforme entre points[i] e points[i + 1]
