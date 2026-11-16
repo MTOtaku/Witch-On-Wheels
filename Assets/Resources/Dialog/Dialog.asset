@@ -25,3 +25,4 @@ MonoBehaviour:
     CharacterDisplayDelay: 0
     Sentence: "Gostei de dialogar com voc\xEA"
     Avatar: {fileID: 11400000, guid: 9ccb534b4c0514646b6b42497fcb4ce2, type: 2}
+  NPCDeliveryAnItem: {fileID: 11400000, guid: a9a9b710cdf5e8c4a87f97a11fc3630c, type: 2}

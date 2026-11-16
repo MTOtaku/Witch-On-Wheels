@@ -285,8 +285,8 @@ GameObject:
   - component: {fileID: 6637933001461041258}
   - component: {fileID: 5736758868686168418}
   - component: {fileID: 5425852667296280475}
-  - component: {fileID: 7741419758165227724}
-  - component: {fileID: 4589228754176487964}
+  - component: {fileID: 2570589610133196816}
+  - component: {fileID: 636092968055606210}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -478,7 +478,9 @@ MonoBehaviour:
   currentSpeed: 0
   currentVelocity: {x: 0, y: 0}
   currentState: 
---- !u!114 &7741419758165227724
+  data: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
+  playerInteractable: {fileID: 1181942870392884863}
+--- !u!114 &2570589610133196816
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -487,36 +489,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 8250800338139849310}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54fd4d439b2f4b2cb6d6aa2141325f1c, type: 3}
+  m_Script: {fileID: 11500000, guid: 9362db7156cbaa14fa5fa21721ae8cb4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DevCheatFly
-  enableCheatAction: {fileID: 2570238036646058757, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  cheatMoveAction: {fileID: 6755962695049114211, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  flySpeed: 12
-  controller: {fileID: 5425852667296280475}
-  cheatActive: 0
---- !u!95 &4589228754176487964
-Animator:
-  serializedVersion: 7
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryManager
+--- !u!114 &636092968055606210
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8250800338139849310}
   m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 9ca9573cb90e58f40b926ce5242e55f0, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24651a42845aa4c4ba317f22821b84fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerQuestManager
 --- !u!1001 &3237273926486509999
 PrefabInstance:
   m_ObjectHideFlags: 0

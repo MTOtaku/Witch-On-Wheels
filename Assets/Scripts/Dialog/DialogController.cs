@@ -38,8 +38,13 @@ public class DialogController : MonoBehaviour
             yield return new WaitUntil(() => !isShowingMessage);
         }
         HideAllChats();
-        ObjectPoolManager.ReturnObjectToPool(this.gameObject, PoolType.DialogSystem);
+
+        if(dialogData.NPCDeliveryAnItem != null)
+        {
+           Delivery();
+        }
         finishDialogCallback?.Invoke();
+        ObjectPoolManager.ReturnObjectToPool(this.gameObject, PoolType.DialogSystem);
     }
 
     private void FinishWriteDialogSentence()
@@ -54,5 +59,18 @@ public class DialogController : MonoBehaviour
             chat.ClearChat();
             chat.ShowChat(false);
         }
+    }
+
+    private void Delivery()
+    {
+            if(dialogData.NPCDeliveryAnItem is ItemData)
+            {
+                GameEvents.Item.DeliveryItem?.Invoke((ItemData) dialogData.NPCDeliveryAnItem);
+            }
+
+            if(dialogData.NPCDeliveryAnItem is QuestData)
+            {
+                GameEvents.Quest.DeliveryQuest?.Invoke((QuestData) dialogData.NPCDeliveryAnItem);
+            }
     }
 }
