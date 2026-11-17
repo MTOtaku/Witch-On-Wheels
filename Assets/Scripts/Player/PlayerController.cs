@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -151,7 +152,7 @@ public class PlayerController : MonoBehaviour {
     [Min(0f)] public float railBoostEndDeceleration = 10f;
 
     [Header("Rail Grinding - Visual")]
-    [Tooltip("Inclina o sprite seguindo o trilho.")]
+    [Tooltip("Gira o sprite seguindo o trilho, inclusive de cabeça para baixo nos loops. O sprite gira em volta do pivô do Player (posição incluída) e volta ao normal ao sair do trilho.")]
     public bool railTiltVisual = true;
 
     [Tooltip("Objeto que inclina. Se vazio, usa o objeto do Animator (o sprite filho).")]
@@ -187,12 +188,21 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
     [Min(0.01f)] public float railAirTurnDeceleration = 18f;
     
+    [Header("Interação")]
+    [Tooltip("Se ligado, o jogador também pode entrar em Interagindo no ar (Rise/Fall). Desligado: só no chão (Idle/Run/TurnOver).")]
+    public bool interactAllowedInAir = false;
+
+    [Tooltip("Chamado quando o jogador entra em Interagindo (ex.: abrir a caixa de diálogo, travar a câmera).")]
+    public UnityEvent onInteractionStarted;
+
+    [Tooltip("Chamado quando o jogador sai de Interagindo (ex.: fim do diálogo).")]
+    public UnityEvent onInteractionEnded;
+
     [Header("Componentes e Entrada")]
     public Rigidbody2D rb;
     public Animator animator;
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
-    public InputActionReference interactAction;
 
     [Header("Status (leitura)")]
     public bool isGrounded;
@@ -214,6 +224,7 @@ public class PlayerController : MonoBehaviour {
     public LedgeGrabState LedgeGrab { get; private set; }
     public LedgeClimbState LedgeClimb { get; private set; }
     public GrindState Grind     { get; private set; }
+    public InteractState Interact { get; private set; }
 
     // ------------------------------------------- Leitura de entrada -------------------------------------------
     public float MoveInput  { get; private set; }
@@ -330,13 +341,6 @@ public class PlayerController : MonoBehaviour {
     private RailPath _ignoredRail;
     private float _ignoredRailUntil;
 
-    // ------------------------------------------- Player Info ------------------------------------------------------------------
-    
-    [SerializeField] private AvatarData data;
-    // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
-
-    [SerializeField] private PlayerInteractable playerInteractable;
-
     private void Awake() {
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
@@ -357,6 +361,7 @@ public class PlayerController : MonoBehaviour {
         LedgeGrab  = new LedgeGrabState(this);
         LedgeClimb = new LedgeClimbState(this);
         Grind      = new GrindState(this);
+        Interact   = new InteractState(this);
 
         StateMachine.StateChanged += (_, next) =>
             currentState = next != null ? next.GetType().Name : string.Empty;
@@ -366,14 +371,12 @@ public class PlayerController : MonoBehaviour {
         if (moveAction?.action != null) moveAction.action.Enable();
         if (jumpAction?.action != null) jumpAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
-        if (interactAction?.action != null)  interactAction.action.Enable();
     }
 
     private void OnDisable() {
         if (moveAction?.action != null) moveAction.action.Disable();
         if (jumpAction?.action != null) jumpAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
-        if (interactAction?.action != null) interactAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
@@ -412,11 +415,6 @@ public class PlayerController : MonoBehaviour {
             if (jumpAction.action.WasPressedThisFrame())  _jumpBufferTimer = jumpBufferTime;
             if (jumpAction.action.WasReleasedThisFrame()) _jumpReleased    = true;
             JumpHeld = jumpAction.action.IsPressed();
-        }
-
-        if(interactAction?.action != null && interactAction.action.WasPressedThisFrame())
-        {
-            playerInteractable.TryExecutInteraction(data);
         }
     }
 
@@ -745,6 +743,49 @@ public class PlayerController : MonoBehaviour {
 
     public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
     
+    // ------------------------------------------- Interação (diálogo, NPCs, objetos) -------------------------------------------
+
+    // C#: player.InteractionStarted += ...  (os mesmos avisos existem como UnityEvent no Inspector)
+    public event Action InteractionStarted;
+    public event Action InteractionEnded;
+
+    // Flag de leitura: o jogador está no estado Interagindo (movimento desabilitado)
+    public bool IsInteracting => StateMachine != null && StateMachine.Current == Interact;
+
+    // Só pode começar a interagir parado no chão (ou no ar, se permitido) e fora de outro estado especial
+    public bool CanInteract {
+        get {
+            if (!enabled || StateMachine == null || IsInteracting) return false;
+
+            PlayerState current = StateMachine.Current;
+            if (current is GroundedState) return true;
+
+            return interactAllowedInAir && (current == Rise || current == Fall);
+        }
+    }
+
+    // Entra no estado Interagindo e desabilita o movimento. Retorna false se não pôde (ex.: está no trilho).
+    public bool TryBeginInteraction() {
+        if (!CanInteract) return false;
+
+        StateMachine.ChangeState(Interact);
+        InteractionStarted?.Invoke();
+        onInteractionStarted?.Invoke();
+        return true;
+    }
+
+    // Versão sem retorno, para ligar em UnityEvent / botões / sistema de diálogo
+    public void BeginInteraction() => TryBeginInteraction();
+
+    // Sai do estado Interagindo e devolve o controle. Chamar ao terminar o diálogo.
+    public void EndInteraction() {
+        if (!IsInteracting) return;
+
+        StateMachine.ChangeState(isGrounded ? (PlayerState)Idle : Fall);
+        InteractionEnded?.Invoke();
+        onInteractionEnded?.Invoke();
+    }
+
     // ------------------------------------------- Rail: tempo, boost, embalo -------------------------------------------
 
     // Chamado pelo GrindState ao entrar (true) e sair (false) do trilho
