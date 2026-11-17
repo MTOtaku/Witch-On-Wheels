@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{7985c7de-cf1b-46ae-9c64-1e186c64f949}">
+		<property name="color">
+			<value>Blue</value>
+		</property>
 		<property name="name">
 			<value>mx_menu</value>
 		</property>
@@ -8,7 +11,7 @@
 			<value>0</value>
 		</property>
 		<relationship name="folder">
-			<destination>{89d1abed-f1ca-4273-a9c0-3d8e2cfb191d}</destination>
+			<destination>{5c0c1770-a5a3-400d-91d6-e5a4ca61b837}</destination>
 		</relationship>
 		<relationship name="mixer">
 			<destination>{65a44a71-a7d4-4656-b427-9f2ffecda81e}</destination>
@@ -53,7 +56,7 @@
 			<destination>{aea6c6e7-b144-49f3-9ce7-94ec83f394f5}</destination>
 		</relationship>
 		<relationship name="output">
-			<destination>{faec36ff-c20e-459c-82f7-ff741fc4892e}</destination>
+			<destination>{f5e81b09-a6d3-4ff1-8ea5-72e01ce84621}</destination>
 		</relationship>
 	</object>
 	<object class="EventAutomatableProperties" id="{d5789b6d-5a89-4ab3-a869-a4464faa0c8b}" />
