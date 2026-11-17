@@ -12,7 +12,8 @@ public static class PlayerAnim {
     public static readonly int LedgeGrab  = Animator.StringToHash("LedgeGrab");
     public static readonly int LedgeClimb = Animator.StringToHash("LedgeClimb");
     public static readonly int Grind      = Animator.StringToHash("Grind");
-    public static readonly int RailSwitch = Animator.StringToHash("RailSwitch");   // ainda sem animação: usa a de pulo (Rise)
+    public static readonly int RailSwitch = Animator.StringToHash("RailSwitch");
+    public static readonly int Interact   = Animator.StringToHash("Interact");     // ainda sem animação: mantém a atual   // ainda sem animação: usa a de pulo (Rise)
 }
 
 // -------------------------------------------  Base dos estados no chão -------------------------------------------
@@ -428,7 +429,10 @@ public class LedgeClimbState : PlayerState {
 // Rail Grinding:
 //   - Anda por DISTÂNCIA no RailPath, com a gravidade em 0. Só este estado mexe no Rigidbody2D.
 //   - Velocidade FIXA (railCruiseSpeed). Apertar para o lado oposto freia, vira e acelera de novo.
-//   - Boost (botão): impulso para o lado em que o Player aponta; tempo e cooldown ficam no PlayerController.
+//   - O sentido (_dir) é guardado ao longo do TRILHO e só muda quando o jogador vira. Por isso loops
+//     e curvas de 360° funcionam: o sentido não depende de a tangente apontar para a esquerda ou direita.
+//   - O Player fica sempre do mesmo lado do trilho (normal). Em loop, isso o leva de cabeça para baixo por dentro.
+//   - Boost (botão): impulso no sentido em que o Player anda; tempo e cooldown ficam no PlayerController.
 //   - Pulo: sai mantendo a velocidade (embalo). Baixo + Pulo: desce do trilho.
 //   - O tempo no trilho é limitado (com upgrades). Acabou o tempo -> solta o Player.
 public class GrindState : PlayerState {
@@ -436,16 +440,22 @@ public class GrindState : PlayerState {
     // Evita deslocamentos excessivos caso o Player esteja longe do ponto.
     private const float MaxSnapVelocity = 60f;
 
-    // Abaixo disso o trecho do trilho é considerado vertical (o lado esquerda/direita não decide o sentido)
+    // Abaixo disso o trecho do trilho é considerado vertical (esquerda/direita não diz o sentido)
     private const float VerticalTangentThreshold = 0.05f;
+
+    // Pulo: se a normal apontar mais para cima que isso, pula reto para cima; senão pula para longe do trilho
+    private const float UprightNormalY = 0.5f;
 
     private RailPath _rail;
     private float _distance;
-    private float _speed;          // velocidade COM SINAL ao longo do trilho (+ = rumo ao fim, - = rumo ao início)
-    private int _side = 1;         // lado do mundo para onde o Player aponta: +1 direita, -1 esquerda
+    private float _speed;          // velocidade COM SINAL ao longo da tangente (+ = rumo ao fim do trilho)
+    private int _dir = 1;          // sentido DESEJADO ao longo do trilho (+1 rumo ao fim, -1 rumo ao início)
+    private float _normalSign = 1f; // lado do trilho onde o Player fica (+1 / -1), constante durante o grind
+    private int _lastInputSide;    // último lado do input (-1, 0, +1): o sentido só é reavaliado quando ele muda
     private float _height;         // distância do pivô do Player até os pés
     private float _prevInputY;
     private Transform _visual;
+    private Vector3 _visualRestPosition;   // posição local do sprite fora do trilho (restaurada ao sair)
 
     public GrindState(PlayerController player) : base(player) { }
 
@@ -455,6 +465,7 @@ public class GrindState : PlayerState {
         _height = player.PivotToFeet;
         _prevInputY = player.MoveInputY;
         _visual = player.RailVisualRoot;
+        if (_visual != null) _visualRestPosition = _visual.localPosition;
 
         if (_rail == null || !_rail.IsValid) {
             player.StateMachine.ChangeState(player.Fall);
@@ -463,24 +474,29 @@ public class GrindState : PlayerState {
 
         Vector2 tangent = _rail.GetTangent(_distance);
 
-        // Lado: input atual, senão o movimento horizontal. Parado: o lado para onde o trilho segue.
-        if (player.HasInput)                       _side = player.MoveInput > 0f ? 1 : -1;
-        else if (Mathf.Abs(player.VelocityX) > 0.5f) _side = player.VelocityX > 0f ? 1 : -1;
-        else                                       _side = tangent.x >= 0f ? 1 : -1;
+        // Lado do trilho em que o Player está (normalmente em cima)
+        Vector2 toPlayer = player.rb.position - _rail.GetPoint(_distance);
+        float side = Vector2.Dot(toPlayer, Perp(tangent));
+        _normalSign = Mathf.Abs(side) > 0.01f ? Mathf.Sign(side) : (Perp(tangent).y >= 0f ? 1f : -1f);
 
-        float alongSign = SideToAlongSign(tangent);
+        // Lado do mundo: input atual, senão o movimento horizontal. Parado: o lado para onde o trilho segue.
+        int worldSide;
+        if (player.HasInput)                         worldSide = player.MoveInput > 0f ? 1 : -1;
+        else if (Mathf.Abs(player.VelocityX) > 0.5f) worldSide = player.VelocityX > 0f ? 1 : -1;
+        else                                         worldSide = tangent.x >= 0f ? 1 : -1;
+
+        _dir = SideToDir(tangent, worldSide);
+        _lastInputSide = player.HasInput ? (player.MoveInput > 0f ? 1 : -1) : 0;
 
         // Velocidade ao entrar: a guardada do pulo (volta com a mesma velocidade) ou o embalo atual
         float magnitude;
-        if (player.TryConsumeRailReturnSpeed(out float stored)) {
+        if (player.TryConsumeRailReturnSpeed(out float stored))
             magnitude = stored;
-        }
-        else {
-            magnitude = Mathf.Max(0f, Vector2.Dot(player.rb.linearVelocity, tangent * alongSign));
-        }
+        else
+            magnitude = Mathf.Max(0f, Vector2.Dot(player.rb.linearVelocity, tangent * _dir));
 
         magnitude = Mathf.Min(magnitude, Mathf.Max(player.railBoostMaxSpeed, player.RailCruiseSpeed));
-        _speed = alongSign * magnitude;
+        _speed = _dir * magnitude;
 
         player.ClearRailMomentum();   // a partir daqui quem controla é o trilho
         player.SetRailGrinding(true);
@@ -525,6 +541,8 @@ public class GrindState : PlayerState {
         if (upPressed && TrySwitchRail(+1)) return;
         if (downPressed && player.railDownSwitchesRail && TrySwitchRail(-1)) return;
 
+        UpdateDirection();
+
         // Boost: só liga se não estiver ativo nem em cooldown.
         if (player.RailBoostPressed) player.TryStartRailBoost();
 
@@ -536,22 +554,16 @@ public class GrindState : PlayerState {
 
         float dt = Time.fixedDeltaTime;
 
-        // O Player aponta para o último lado apertado e continua nele ao soltar o input.
-        if (player.HasInput) _side = player.MoveInput > 0f ? 1 : -1;
-
-        Vector2 tangent = _rail.GetTangent(_distance);
-        float alongSign = SideToAlongSign(tangent);
-
-        // Velocidade alvo: fixa, ou a do boost enquanto ele durar. O sinal vem do lado apontado.
+        // Velocidade alvo: fixa, ou a do boost enquanto ele durar. O sinal vem do sentido (_dir).
         bool boosting = player.RailBoostActive;
         float targetMagnitude = boosting
             ? Mathf.Max(player.railBoostMaxSpeed, player.RailCruiseSpeed)
             : player.RailCruiseSpeed;
-        float target = alongSign * targetMagnitude;
+        float target = _dir * targetMagnitude;
 
         // Aceleração / frenagem
         float rate;
-        if (_speed * target < 0f)                        rate = player.railTurnDeceleration;      // indo para o lado oposto: freia até parar
+        if (_speed * target < 0f)                        rate = player.railTurnDeceleration;      // indo contra o sentido desejado: freia até parar
         else if (boosting)                               rate = player.railBoostAcceleration;
         else if (Mathf.Abs(_speed) > targetMagnitude)    rate = player.railBoostEndDeceleration;  // sobra do boost
         else                                             rate = player.railAcceleration;
@@ -568,8 +580,9 @@ public class GrindState : PlayerState {
             return;
         }
 
-        // Mantém o jogador encaixado no trilho.
-        Vector2 targetPos = _rail.GetPoint(_distance) + Vector2.up * _height;
+        // Mantém o jogador encaixado no trilho, do lado da normal (em loop, por dentro e de cabeça para baixo).
+        Vector2 tangent = _rail.GetTangent(_distance);
+        Vector2 targetPos = _rail.GetPoint(_distance) + Normal(tangent) * _height;
         Vector2 velocity = (targetPos - player.rb.position) / dt;
 
         player.rb.linearVelocity = Vector2.ClampMagnitude(velocity, MaxSnapVelocity);
@@ -580,17 +593,44 @@ public class GrindState : PlayerState {
         player.SetRailGrinding(false);
         player.StartRailCooldown();
 
-        // Restaura a rotação original do sprite.
-        if (_visual != null)
+        // Restaura a rotação e a posição originais do sprite.
+        if (_visual != null) {
             _visual.localRotation = Quaternion.identity;
+            _visual.localPosition = _visualRestPosition;
+        }
     }
 
-    // Sentido ao longo do trilho (+1 / -1) que leva o Player ao lado do mundo que ele aponta.
-    private float SideToAlongSign(Vector2 tangent) {
-        if (Mathf.Abs(tangent.x) > VerticalTangentThreshold)
-            return _side * Mathf.Sign(tangent.x);
+    private static Vector2 Perp(Vector2 v) => new Vector2(-v.y, v.x);
 
-        return Mathf.Sign(_speed);   // trecho vertical: mantém o sentido atual
+    // Normal do trilho do lado em que o Player fica (para "cima" do Player)
+    private Vector2 Normal(Vector2 tangent) => Perp(tangent) * _normalSign;
+
+    // Converte o lado do mundo (esquerda/direita) em sentido ao longo do trilho
+    private int SideToDir(Vector2 tangent, int worldSide) {
+        if (Mathf.Abs(tangent.x) > VerticalTangentThreshold)
+            return worldSide * tangent.x > 0f ? 1 : -1;
+
+        return Vector2.Dot(player.rb.linearVelocity, tangent) >= 0f ? 1 : -1;   // trecho vertical
+    }
+
+    // Vira o sentido só quando o jogador APERTA um lado novo e esse lado é o oposto ao que ele está indo.
+    // Segurar o mesmo lado (ou soltar o input) nunca muda o sentido: é isso que evita o vai e volta nos loops.
+    private void UpdateDirection() {
+        int inputSide = player.HasInput ? (player.MoveInput > 0f ? 1 : -1) : 0;
+        if (inputSide == _lastInputSide) return;
+
+        if (inputSide == 0) {
+            _lastInputSide = 0;
+            return;
+        }
+
+        Vector2 tangent = _rail.GetTangent(_distance);
+        if (Mathf.Abs(tangent.x) <= VerticalTangentThreshold) return;   // trecho vertical: espera o lado ficar claro
+
+        int facing = tangent.x * _dir > 0f ? 1 : -1;   // lado do mundo para onde o Player anda agora
+        if (inputSide != facing) _dir = -_dir;         // oposto: vira (o motor freia e acelera para o outro lado)
+
+        _lastInputSide = inputSide;
     }
 
     // Velocidade no sentido do movimento, usada ao soltar do trilho.
@@ -599,6 +639,8 @@ public class GrindState : PlayerState {
     // Sai do trilho mantendo a velocidade. Muda de estado ANTES de definir a velocidade
     // (o RiseState.Enter define a velocidade vertical do pulo comum).
     private void Release(PlayerState next, bool jump = false, bool dropDown = false, bool endOfRail = false) {
+        Vector2 tangent = _rail.GetTangent(_distance);
+        Vector2 normal = Normal(tangent);
         Vector2 travel = TravelVelocity();
         float travelSpeed = Mathf.Abs(_speed);
 
@@ -613,7 +655,12 @@ public class GrindState : PlayerState {
 
         player.StateMachine.ChangeState(next);
 
-        if (jump)          player.rb.linearVelocity = new Vector2(travel.x, Mathf.Max(travel.y, 0f) + player.railJumpForce);
+        if (jump) {
+            if (normal.y >= UprightNormalY)
+                player.rb.linearVelocity = new Vector2(travel.x, Mathf.Max(travel.y, 0f) + player.railJumpForce);
+            else
+                player.rb.linearVelocity = travel + normal * player.railJumpForce;   // em loop: pula para longe do trilho
+        }
         else if (dropDown) player.rb.linearVelocity = new Vector2(travel.x, Mathf.Min(travel.y, 0f));
         else               player.rb.linearVelocity = travel;
 
@@ -630,15 +677,20 @@ public class GrindState : PlayerState {
                 out float nextDistance))
             return false;
 
-        Vector2 travel = _rail.GetTangent(_distance) * _speed;
+        Vector2 oldTangent = _rail.GetTangent(_distance);
+        Vector2 oldNormal = Normal(oldTangent);
+        Vector2 heading = oldTangent * _dir;
         Vector2 nextTangent = next.GetTangent(nextDistance);
 
         RailPath previous = _rail;
         _rail = next;
         _distance = nextDistance;
 
-        // Ajusta o sinal para preservar o sentido do movimento.
-        _speed = Mathf.Abs(_speed) * (travel.x * nextTangent.x >= 0f ? 1f : -1f);
+        // Mantém o mesmo sentido de movimento e o mesmo lado do trilho
+        int newDir = Vector2.Dot(heading, nextTangent) >= 0f ? 1 : -1;
+        _speed *= newDir * _dir;
+        _dir = newDir;
+        _normalSign = Vector2.Dot(Perp(nextTangent), oldNormal) >= 0f ? 1f : -1f;
 
         // Avisa a troca (animação + evento). Aqui é o único ponto onde a troca acontece.
         player.NotifyRailSwitched(previous, next, vertical);
@@ -646,23 +698,47 @@ public class GrindState : PlayerState {
         return true;
     }
 
-    // Inclina somente o sprite. O Rigidbody não gira.
+    // Gira somente o sprite para ficar "em pé" na normal do trilho (0° a 360°). O Rigidbody não gira.
+    // O sprite gira em volta do PIVÔ DO PLAYER (a posição dele também é girada), assim os pés
+    // continuam no trilho mesmo de cabeça para baixo, enquanto o collider fica em pé.
     private void TiltVisual() {
         if (!player.railTiltVisual || _visual == null)
             return;
 
-        Vector2 tangent = _rail.GetTangent(_distance);
-        Vector2 t = tangent * SideToAlongSign(tangent);
-
-        float angle = Mathf.Atan2(
-            t.y * Mathf.Sign(t.x),
-            Mathf.Abs(t.x)
-        ) * Mathf.Rad2Deg;
+        Vector2 normal = Normal(_rail.GetTangent(_distance));
+        float angle = Mathf.Atan2(-normal.x, normal.y) * Mathf.Rad2Deg;
 
         _visual.localRotation = Quaternion.Slerp(
             _visual.localRotation,
             Quaternion.Euler(0f, 0f, angle),
             player.railTiltSpeed * Time.deltaTime
         );
+
+        // Gira também o deslocamento do sprite em relação ao pivô do Player
+        _visual.localPosition = _visual.localRotation * _visualRestPosition;
+    }
+}
+
+// ------------------------------------------- Interact -------------------------------------------
+// Jogador interagindo (diálogo, NPC, objeto). O movimento fica desabilitado:
+// só freia até parar. Quem entra e sai deste estado é o PlayerController
+// (TryBeginInteraction / EndInteraction), chamado pelo sistema de diálogo.
+public class InteractState : PlayerState {
+    public InteractState(PlayerController player) : base(player) { }
+
+    public override void Enter() {
+        player.ConsumeJump();           // um pulo apertado antes não dispara ao sair
+        player.ClearRailMomentum();
+        player.SetGravityMultiplier(1f);
+        player.PlayAnimation(PlayerAnim.Interact);
+    }
+
+    // Sem lógica no Tick: nenhuma transição acontece sozinha, só o EndInteraction sai daqui.
+
+    // Freia até parar e deixa a gravidade agir (se estiver no ar, cai)
+    public override void PhysicsTick() => player.MoveHorizontal(0f, braking: true);
+
+    public override void Exit() {
+        player.ConsumeJump();           // botões apertados durante o diálogo não viram pulo
     }
 }
