@@ -6,6 +6,8 @@ public class DialogData : ScriptableObject
 {
     public List<DialogPart> SequenceDialog;
 
+    public DeliverableObjectData NPCDeliveryAnItem;
+
     public DialogPart LoadNextSequence(int countSequence)
     {
         DialogPart dialog = null;

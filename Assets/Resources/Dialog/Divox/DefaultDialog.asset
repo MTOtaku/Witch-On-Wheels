@@ -10,18 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9ac85acac33652e4eb45f325dd2f3cec, type: 3}
-  m_Name: Dialog
+  m_Name: DefaultDialog
   m_EditorClassIdentifier: Assembly-CSharp::DialogData
   SequenceDialog:
   - IsNeedClearDialog: 0
     CharacterDisplayDelay: 0
-    Sentence: Ola como vai
+    Sentence: "Oi essa \xE9 minha conversa padr\xE3o"
     Avatar: {fileID: 11400000, guid: 9ccb534b4c0514646b6b42497fcb4ce2, type: 2}
   - IsNeedClearDialog: 0
     CharacterDisplayDelay: 0
-    Sentence: Vamos continuar conversando
+    Sentence: Entendi Espero que voce possua quest para mim
     Avatar: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
   - IsNeedClearDialog: 0
     CharacterDisplayDelay: 0
-    Sentence: "Gostei de dialogar com voc\xEA"
+    Sentence: Terei sim em um futuro
     Avatar: {fileID: 11400000, guid: 9ccb534b4c0514646b6b42497fcb4ce2, type: 2}
+  NPCDeliveryAnItem: {fileID: 0}

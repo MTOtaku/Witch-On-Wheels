@@ -203,7 +203,7 @@ public class PlayerController : MonoBehaviour {
     public Animator animator;
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
-
+    public InputActionReference interactAction;
     [Header("Status (leitura)")]
     public bool isGrounded;
     public int wallDirection; // -1 = esquerda, 1 = direita, 0 = nenhuma
@@ -211,6 +211,12 @@ public class PlayerController : MonoBehaviour {
     public Vector2 currentVelocity;
 
     [SerializeField] private string currentState;
+    // ------------------------------------------- Player Info ------------------------------------------------------------------
+    
+    [SerializeField] private AvatarData data;
+    // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
+
+    [SerializeField] private PlayerInteractable playerInteractable;
 
     // ------------------------------------------- State Machine -------------------------------------------
     public PlayerStateMachine StateMachine { get; private set; }
@@ -370,12 +376,14 @@ public class PlayerController : MonoBehaviour {
     private void OnEnable() {
         if (moveAction?.action != null) moveAction.action.Enable();
         if (jumpAction?.action != null) jumpAction.action.Enable();
+        if (interactAction?.action != null) interactAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
     }
 
     private void OnDisable() {
         if (moveAction?.action != null) moveAction.action.Disable();
         if (jumpAction?.action != null) jumpAction.action.Disable();
+        if (interactAction?.action != null) interactAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
     }
 
@@ -394,7 +402,7 @@ public class PlayerController : MonoBehaviour {
         StateMachine.Tick();
     }
 
-    private void FixedUpdate() {
+    private void FixedUpdate(){
         StateMachine.PhysicsTick();
 
         if (rb != null) {
@@ -415,6 +423,11 @@ public class PlayerController : MonoBehaviour {
             if (jumpAction.action.WasPressedThisFrame())  _jumpBufferTimer = jumpBufferTime;
             if (jumpAction.action.WasReleasedThisFrame()) _jumpReleased    = true;
             JumpHeld = jumpAction.action.IsPressed();
+        }
+
+        if(interactAction?.action != null && interactAction.action.WasPressedThisFrame())
+        {
+            playerInteractable.TryExecutInteraction(data);
         }
     }
 
