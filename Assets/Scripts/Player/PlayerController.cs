@@ -809,7 +809,7 @@ public class PlayerController : MonoBehaviour {
         }
 
         if (current == WallGrab || current == WallSlide) {
-            if (wallDirection != 0) SetFacing(wallDirection);
+            if (wallDirection != 0) SetFacing(-wallDirection);
             return;
         }
 
@@ -1067,6 +1067,81 @@ public class PlayerController : MonoBehaviour {
         Gizmos.DrawLine(head, head + Vector3.left  * forwardDist);
         Gizmos.DrawLine(head, head + Vector3.right * forwardDist);
         
+        
+// Ledge Grab: detecção da quina e posicionamento do Grab
+        LayerMask ledgeMask = EffectiveWallLayer;
+
+        foreach (int dir in new[] { 1, -1 }) {
+            Vector2 direction = new Vector2(dir, 0f);
+
+            // Reproduz a detecção da parede no peito
+            Vector2 chestOrigin = new Vector2(
+                b.center.x,
+                b.center.y + b.extents.y * 0.3f
+            );
+            
+            RaycastHit2D wallHit = Physics2D.Raycast(
+                chestOrigin, direction, forwardDist, ledgeMask
+            );
+
+            if (!wallHit) continue;
+
+            // Verifica se existe espaço livre acima da cabeça
+            Vector2 headOrigin = new Vector2(
+                b.center.x,
+                b.max.y + 0.15f
+            );
+
+            RaycastHit2D headHit = Physics2D.Raycast(
+                headOrigin, direction, forwardDist, ledgeMask
+            );
+
+            if (headHit) continue;
+
+            // Origem da detecção vertical da quina
+            Vector2 downOrigin = new Vector2(
+                wallHit.point.x + dir * 0.05f,
+                b.max.y + 0.3f
+            );
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(wallHit.point, 0.04f);
+
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(
+                downOrigin,
+                downOrigin + Vector2.down * b.size.y
+            );
+
+            RaycastHit2D downHit = Physics2D.Raycast(
+                downOrigin, Vector2.down, b.size.y, ledgeMask
+            );
+
+            if (!downHit) continue;
+
+            float ledgeY = downHit.point.y;
+
+            if (ledgeY < b.center.y || ledgeY > b.max.y + 0.3f)
+                continue;
+
+            // Posição da quina detectada
+            Vector2 corner = new Vector2(wallHit.point.x, ledgeY);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(corner, 0.07f);
+
+            // Posição do Transform do jogador após agarrar
+            Vector2 grabPosition = new Vector2(
+                corner.x - dir * ledgeGrabOffset.x,
+                corner.y - ledgeGrabOffset.y
+            );
+
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawLine(corner, grabPosition);
+            Gizmos.DrawWireSphere(grabPosition, 0.09f);
+        }
+
+
         //Rail Check Radius
         Vector3 railCheckPosition = new Vector3(
             b.center.x,

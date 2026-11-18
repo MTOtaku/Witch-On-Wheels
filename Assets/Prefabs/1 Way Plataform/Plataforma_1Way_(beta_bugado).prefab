@@ -90,7 +90,7 @@ GameObject:
   - component: {fileID: 9204662906574514042}
   - component: {fileID: 2134333692931973019}
   - component: {fileID: 7797082209638878078}
-  m_Layer: 3
+  m_Layer: 8
   m_Name: Plataforma_1Way_(beta_bugado)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

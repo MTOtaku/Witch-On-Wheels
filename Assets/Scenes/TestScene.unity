@@ -2789,6 +2789,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: eb7b949174118664893779bcbb102b66, type: 3}
+--- !u!95 &1282432644 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4589228754176487964, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+  m_PrefabInstance: {fileID: 3031349311771320012}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1411019663
 GameObject:
   m_ObjectHideFlags: 0
@@ -4799,12 +4804,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 1282432644}
+    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: jumpForce
       value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: wallLayer.m_Bits
-      value: 64
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
+      propertyPath: groundLayer.m_Bits
+      value: 264
       objectReference: {fileID: 0}
     - target: {fileID: 5425852667296280475, guid: e65f222c358b2174292686a3f5534b0c, type: 3}
       propertyPath: ledgeClimbOffset.y
