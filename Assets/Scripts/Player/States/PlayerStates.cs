@@ -498,6 +498,8 @@ public class GrindState : PlayerState {
         magnitude = Mathf.Min(magnitude, Mathf.Max(player.railBoostMaxSpeed, player.RailCruiseSpeed));
         _speed = _dir * magnitude;
 
+        UpdateFlip();
+
         player.ClearRailMomentum();   // a partir daqui quem controla é o trilho
         player.SetRailGrinding(true);
         player.SetGravityMultiplier(0f);
@@ -542,6 +544,7 @@ public class GrindState : PlayerState {
         if (downPressed && player.railDownSwitchesRail && TrySwitchRail(-1)) return;
 
         UpdateDirection();
+        UpdateFlip();
 
         // Boost: só liga se não estiver ativo nem em cooldown.
         if (player.RailBoostPressed) player.TryStartRailBoost();
@@ -598,6 +601,25 @@ public class GrindState : PlayerState {
             _visual.localRotation = Quaternion.identity;
             _visual.localPosition = _visualRestPosition;
         }
+
+        // Ao sair, o Player olha para o lado do mundo em que estava indo
+        if (_rail != null && _rail.IsValid) {
+            Vector2 heading = _rail.GetTangent(_distance) * _dir;
+            if (Mathf.Abs(heading.x) > VerticalTangentThreshold)
+                player.SetFacing(heading.x > 0f ? 1 : -1);
+        }
+    }
+
+    // Espelha o sprite (escala X) para olhar no sentido em que anda no trilho.
+    // Com o giro ligado, o lado é "sentido x lado do trilho": não muda ao dar a volta num loop.
+    private void UpdateFlip() {
+        if (_rail == null || !_rail.IsValid) return;
+
+        float flip;
+        if (player.railTiltVisual) flip = _dir * _normalSign;
+        else                       flip = (_rail.GetTangent(_distance) * _dir).x >= 0f ? 1f : -1f;
+
+        player.SetVisualFlip(flip);
     }
 
     private static Vector2 Perp(Vector2 v) => new Vector2(-v.y, v.x);
