@@ -188,6 +188,16 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
     [Min(0.01f)] public float railAirTurnDeceleration = 18f;
     
+    [Header("Orientação do Sprite")]
+    [Tooltip("Liga o espelhamento do sprite (escala X negativa) conforme o lado para onde o Player anda.")]
+    public bool flipSpriteToFacing = true;
+
+    [Tooltip("Objeto do sprite que é espelhado. Se vazio, usa o mesmo do Rail Visual (ou o objeto do Animator).")]
+    public Transform facingVisual;
+
+    [Tooltip("Marque se a arte original olha para a DIREITA (escala X positiva). Desmarque se ela olha para a esquerda.")]
+    public bool spriteFacesRight = true;
+
     [Header("Interação")]
     [Tooltip("Se ligado, o jogador também pode entrar em Interagindo no ar (Rise/Fall). Desligado: só no chão (Idle/Run/TurnOver).")]
     public bool interactAllowedInAir = false;
@@ -356,6 +366,11 @@ public class PlayerController : MonoBehaviour {
         _defaultGravity   = rb.gravityScale;
         RefillRailTime();
 
+        // Lado inicial = o da escala atual do sprite (não força nada ao começar)
+        Transform facingRoot = FacingRoot;
+        if (facingRoot != null)
+            FacingDirection = (facingRoot.localScale.x >= 0f) == spriteFacesRight ? 1 : -1;
+
         StateMachine = new PlayerStateMachine();
         Idle       = new IdleState(this);
         Run        = new RunState(this);
@@ -400,6 +415,7 @@ public class PlayerController : MonoBehaviour {
         CheckWall();
         UpdateTimers();
         StateMachine.Tick();
+        UpdateFacing();   // depois do Tick: já considera o estado novo (ex.: TurnOver)
     }
 
     private void FixedUpdate(){
@@ -646,6 +662,7 @@ public class PlayerController : MonoBehaviour {
     public void GrabLedge(Vector2 corner, int dir) {
         LedgeCorner = corner;
         LedgeDir    = dir;
+        SetFacing(dir);   // olha para a quina já no primeiro frame
         rb.linearVelocity = Vector2.zero;
         SetGravityMultiplier(0f);
         transform.position = new Vector3(
@@ -756,6 +773,66 @@ public class PlayerController : MonoBehaviour {
 
     public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
     
+    // ------------------------------------------- Orientação do sprite (espelhar o X) -------------------------------------------
+
+    // Lado do mundo para onde o Player olha: +1 direita, -1 esquerda
+    public int FacingDirection { get; private set; } = 1;
+
+    private Transform FacingRoot => facingVisual != null ? facingVisual : RailVisualRoot;
+
+    public void SetFacing(int direction) {
+        if (direction == 0) return;
+
+        FacingDirection = direction > 0 ? 1 : -1;
+        ApplyVisualFlip(FacingDirection);
+    }
+
+    // Usado pelo GrindState (no trilho o espelho segue o sentido do trilho, não o lado do mundo)
+    public void SetVisualFlip(float sign) => ApplyVisualFlip(sign);
+
+    private void ApplyVisualFlip(float sign) {
+        if (!flipSpriteToFacing) return;
+
+        Transform t = FacingRoot;
+        if (t == null) return;
+
+        Vector3 scale = t.localScale;
+        float wanted = Mathf.Abs(scale.x) * (sign >= 0f ? 1f : -1f) * (spriteFacesRight ? 1f : -1f);
+
+        if (!Mathf.Approximately(scale.x, wanted)) {
+            scale.x = wanted;
+            t.localScale = scale;
+        }
+    }
+
+    // Segue o input (ou a velocidade). Estados especiais seguram o lado:
+    //   - TurnOver: mantém o lado ANTIGO durante a animação, para ela não tocar espelhada ao contrário.
+    //     Ao terminar o TurnOver, o lado novo é aplicado.
+    //   - Grind: o GrindState controla. Interagindo: mantém. Parede e quina: sempre olham para a parede.
+    private void UpdateFacing() {
+        if (!flipSpriteToFacing || StateMachine == null) return;
+
+        PlayerState current = StateMachine.Current;
+        if (current == Grind || current == Interact || current == TurnOver) return;
+
+        // Quina: sempre olha para a parede/quina (LedgeDir = lado da quina), não importa como chegou
+        if (current == LedgeGrab || current == LedgeClimb) {
+            if (LedgeDir != 0) SetFacing(LedgeDir);
+            return;
+        }
+
+        if (current == WallGrab || current == WallSlide) {
+            if (wallDirection != 0) SetFacing(wallDirection);
+            return;
+        }
+
+        int direction = 0;
+        if (HasInput && !IsWallJumpLocked)         direction = MoveInput > 0f ? 1 : -1;
+        else if (Mathf.Abs(VelocityX) > 0.1f)      direction = VelocityX > 0f ? 1 : -1;
+
+        if (direction != 0) SetFacing(direction);
+    }
+
     // ------------------------------------------- Interação (diálogo, NPCs, objetos) -------------------------------------------
 
     // C#: player.InteractionStarted += ...  (os mesmos avisos existem como UnityEvent no Inspector)
