@@ -71,6 +71,11 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Duração do movimento de subida na plataforma.")]
     public float ledgeClimbDuration = 0.2f;
 
+    [Tooltip("Objeto do sprite de Ledge Grab. Se vazio, procura por 'LedgeGrab_Sprite' nos filhos.")]
+    public Transform ledgeGrabVisual;
+
+    public Transform LedgeVisualRoot => ledgeGrabVisual != null ? ledgeGrabVisual : transform.Find("LedgeGrab_Sprite");
+
     [Header("Rail Grinding")]
     
     [Tooltip("Ação do Input System utilizada para entrar manualmente em um trilho.")]
@@ -160,6 +165,9 @@ public class PlayerController : MonoBehaviour {
 
     [Tooltip("Rapidez com que o sprite acompanha a inclinação.")]
     public float railTiltSpeed = 12f;
+
+    [Tooltip("Alterna a direção (espelha no X) do Rail Visual conforme o sentido do grind.")]
+    public bool railFlipVisual = true;
 
     [Header("Lançamento do Rail Grinding")]
     [Tooltip("Força do pulo ao sair do trilho. O impulso segue a direção perpendicular ao sprite, apontando para cima.")]
@@ -366,6 +374,9 @@ public class PlayerController : MonoBehaviour {
         _defaultGravity   = rb.gravityScale;
         RefillRailTime();
 
+        if (ledgeGrabVisual == null)
+            ledgeGrabVisual = transform.Find("LedgeGrab_Sprite");
+
         // Lado inicial = o da escala atual do sprite (não força nada ao começar)
         Transform facingRoot = FacingRoot;
         if (facingRoot != null)
@@ -424,6 +435,21 @@ public class PlayerController : MonoBehaviour {
         if (rb != null) {
             currentSpeed = rb.linearVelocity.magnitude;
             currentVelocity = rb.linearVelocity;
+        }
+    }
+
+    private void LateUpdate() {
+        // Durante o LedgeGrab, garante que a posição local X do sprite espelhe conforme a direção da quina,
+        // já que o Animator sobrescreve o localPosition.x a cada frame (-0.4f na animação original).
+        if (StateMachine != null && StateMachine.Current == LedgeGrab) {
+            Transform ledge = LedgeVisualRoot;
+            if (ledge != null) {
+                Vector3 lp = ledge.localPosition;
+                float baseX = Mathf.Abs(lp.x);
+                if (Mathf.Approximately(baseX, 0f)) baseX = -0.28f;
+                lp.x = LedgeDir > 0 ? baseX : -baseX;
+                ledge.localPosition = lp;
+            }
         }
     }
 
@@ -662,7 +688,7 @@ public class PlayerController : MonoBehaviour {
     public void GrabLedge(Vector2 corner, int dir) {
         LedgeCorner = corner;
         LedgeDir    = dir;
-        SetFacing(dir);   // olha para a quina já no primeiro frame
+        SetFacing(-dir);   // olha para a quina já no primeiro frame
         rb.linearVelocity = Vector2.zero;
         SetGravityMultiplier(0f);
         transform.position = new Vector3(
@@ -793,7 +819,19 @@ public class PlayerController : MonoBehaviour {
     private void ApplyVisualFlip(float sign) {
         if (!flipSpriteToFacing) return;
 
-        Transform t = FacingRoot;
+        FlipTransform(FacingRoot, sign);
+
+        if (railFlipVisual && railVisual != null && railVisual != FacingRoot) {
+            FlipTransform(railVisual, sign);
+        }
+
+        Transform ledge = LedgeVisualRoot;
+        if (ledge != null && ledge != FacingRoot) {
+            FlipTransform(ledge, sign);
+        }
+    }
+
+    private void FlipTransform(Transform t, float sign) {
         if (t == null) return;
 
         Vector3 scale = t.localScale;
