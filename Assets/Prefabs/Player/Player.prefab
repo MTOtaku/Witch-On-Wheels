@@ -663,14 +663,14 @@ MonoBehaviour:
   animator: {fileID: 91562889086148361}
   moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  interactAction: {fileID: 0}
+  interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   isGrounded: 0
   wallDirection: 0
   currentSpeed: 0
   currentVelocity: {x: 0, y: 0}
   currentState: 
-  data: {fileID: 0}
-  playerInteractable: {fileID: 0}
+  data: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
+  playerInteractable: {fileID: 5266231385878499710}
 --- !u!114 &3600075169590544203
 MonoBehaviour:
   m_ObjectHideFlags: 0
