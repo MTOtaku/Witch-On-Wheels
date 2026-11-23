@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 public static class GameEvents
 {
@@ -18,5 +19,10 @@ public static class GameEvents
     public static class Dialog
     {
         public static Action<AvatarData> AvatarUpdateDialogStatusToFinishQuest;
+    }
+
+    public static class UI
+    {
+        public static Action<List<ItemSlot>> UpdateAvatarItemUI;
     }
 }

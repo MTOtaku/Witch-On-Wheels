@@ -104,7 +104,6 @@ public class NPCController : MonoBehaviour, IInteractable
 
     private void UpdateNPCState(NPCStateEnum newState)
     {
-        Debug.Log("Ola: " + newState);
         npcState = newState;
         questStatus.UpdateState(npcState);
     }
