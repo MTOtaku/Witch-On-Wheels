@@ -1,8 +1,16 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 public class PlayerInventoryManager : MonoBehaviour
 {
-    [SerializeField] private List<ItemSlot> playerItems; 
+    [SerializeField] private List<ItemSlot> playerItems;
+    [SerializeField] private const int MAX_INVENTORY_ITEMS = 5;
+
+    void Start()
+    {
+        InitializeInventory();
+    }
+
     private void OnEnable()
     {
         GameEvents.Item.DeliveryItem += ReceiveItem;
@@ -14,21 +22,39 @@ public class PlayerInventoryManager : MonoBehaviour
 
     }
 
+    private void InitializeInventory()
+    {
+        for(int i = 0; i < MAX_INVENTORY_ITEMS; i++)
+        {
+            var freeSlot = new ItemSlot();
+            playerItems.Add(freeSlot);
+        }
+        GameEvents.UI.UpdateAvatarItemUI?.Invoke(playerItems);
+    }
+
     private void ReceiveItem(ItemData data)
     {
-        var item = playerItems.Find(x => x.Item.Name == data.Name);
+        var item = playerItems.Find(x => x.Item?.Name == data.Name);
         if(item != null)
         {
-            Debug.Log("Item Existente");
             item.Amount++;
         }
         else
         {
             ItemSlot newItem = new ItemSlot();
             newItem.ObtainNewItem(data);
-            playerItems.Add(newItem);
+            var freeSlotIndex = playerItems.FindIndex(x => x.Item == null);
+            if(freeSlotIndex >= 0)
+            {
+                playerItems[freeSlotIndex] = newItem;
+            }
+            else
+            {
+                Debug.LogWarning("Inventório lotado impossível adicionar outro item");
+            }
         }
         GameEvents.Quest.PlayerObtainItem?.Invoke(data);
+        GameEvents.UI.UpdateAvatarItemUI?.Invoke(playerItems);
     }
 }
 
