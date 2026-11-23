@@ -71,6 +71,11 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Duração do movimento de subida na plataforma.")]
     public float ledgeClimbDuration = 0.2f;
 
+    [Tooltip("Objeto do sprite de Ledge Grab. Se vazio, procura por 'LedgeGrab_Sprite' nos filhos.")]
+    public Transform ledgeGrabVisual;
+
+    public Transform LedgeVisualRoot => ledgeGrabVisual != null ? ledgeGrabVisual : transform.Find("LedgeGrab_Sprite");
+
     [Header("Rail Grinding")]
     
     [Tooltip("Ação do Input System utilizada para entrar manualmente em um trilho.")]
@@ -161,6 +166,9 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Rapidez com que o sprite acompanha a inclinação.")]
     public float railTiltSpeed = 12f;
 
+    [Tooltip("Alterna a direção (espelha no X) do Rail Visual conforme o sentido do grind.")]
+    public bool railFlipVisual = true;
+
     [Header("Lançamento do Rail Grinding")]
     [Tooltip("Força do pulo ao sair do trilho. O impulso segue a direção perpendicular ao sprite, apontando para cima.")]
     [Min(0f)] public float railJumpForce = 12f;
@@ -188,6 +196,16 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
     [Min(0.01f)] public float railAirTurnDeceleration = 18f;
     
+    [Header("Orientação do Sprite")]
+    [Tooltip("Liga o espelhamento do sprite (escala X negativa) conforme o lado para onde o Player anda.")]
+    public bool flipSpriteToFacing = true;
+
+    [Tooltip("Objeto do sprite que é espelhado. Se vazio, usa o mesmo do Rail Visual (ou o objeto do Animator).")]
+    public Transform facingVisual;
+
+    [Tooltip("Marque se a arte original olha para a DIREITA (escala X positiva). Desmarque se ela olha para a esquerda.")]
+    public bool spriteFacesRight = true;
+
     [Header("Interação")]
     [Tooltip("Se ligado, o jogador também pode entrar em Interagindo no ar (Rise/Fall). Desligado: só no chão (Idle/Run/TurnOver).")]
     public bool interactAllowedInAir = false;
@@ -356,6 +374,14 @@ public class PlayerController : MonoBehaviour {
         _defaultGravity   = rb.gravityScale;
         RefillRailTime();
 
+        if (ledgeGrabVisual == null)
+            ledgeGrabVisual = transform.Find("LedgeGrab_Sprite");
+
+        // Lado inicial = o da escala atual do sprite (não força nada ao começar)
+        Transform facingRoot = FacingRoot;
+        if (facingRoot != null)
+            FacingDirection = (facingRoot.localScale.x >= 0f) == spriteFacesRight ? 1 : -1;
+
         StateMachine = new PlayerStateMachine();
         Idle       = new IdleState(this);
         Run        = new RunState(this);
@@ -400,6 +426,7 @@ public class PlayerController : MonoBehaviour {
         CheckWall();
         UpdateTimers();
         StateMachine.Tick();
+        UpdateFacing();   // depois do Tick: já considera o estado novo (ex.: TurnOver)
     }
 
     private void FixedUpdate(){
@@ -408,6 +435,21 @@ public class PlayerController : MonoBehaviour {
         if (rb != null) {
             currentSpeed = rb.linearVelocity.magnitude;
             currentVelocity = rb.linearVelocity;
+        }
+    }
+
+    private void LateUpdate() {
+        // Durante o LedgeGrab, garante que a posição local X do sprite espelhe conforme a direção da quina,
+        // já que o Animator sobrescreve o localPosition.x a cada frame (-0.4f na animação original).
+        if (StateMachine != null && StateMachine.Current == LedgeGrab) {
+            Transform ledge = LedgeVisualRoot;
+            if (ledge != null) {
+                Vector3 lp = ledge.localPosition;
+                float baseX = Mathf.Abs(lp.x);
+                if (Mathf.Approximately(baseX, 0f)) baseX = -0.28f;
+                lp.x = LedgeDir > 0 ? baseX : -baseX;
+                ledge.localPosition = lp;
+            }
         }
     }
 
@@ -646,6 +688,7 @@ public class PlayerController : MonoBehaviour {
     public void GrabLedge(Vector2 corner, int dir) {
         LedgeCorner = corner;
         LedgeDir    = dir;
+        SetFacing(-dir);   // olha para a quina já no primeiro frame
         rb.linearVelocity = Vector2.zero;
         SetGravityMultiplier(0f);
         transform.position = new Vector3(
@@ -756,6 +799,78 @@ public class PlayerController : MonoBehaviour {
 
     public void StartRailCooldown() => _railCooldownUntil = Time.time + railReattachCooldown;
     
+    // ------------------------------------------- Orientação do sprite (espelhar o X) -------------------------------------------
+
+    // Lado do mundo para onde o Player olha: +1 direita, -1 esquerda
+    public int FacingDirection { get; private set; } = 1;
+
+    private Transform FacingRoot => facingVisual != null ? facingVisual : RailVisualRoot;
+
+    public void SetFacing(int direction) {
+        if (direction == 0) return;
+
+        FacingDirection = direction > 0 ? 1 : -1;
+        ApplyVisualFlip(FacingDirection);
+    }
+
+    // Usado pelo GrindState (no trilho o espelho segue o sentido do trilho, não o lado do mundo)
+    public void SetVisualFlip(float sign) => ApplyVisualFlip(sign);
+
+    private void ApplyVisualFlip(float sign) {
+        if (!flipSpriteToFacing) return;
+
+        FlipTransform(FacingRoot, sign);
+
+        if (railFlipVisual && railVisual != null && railVisual != FacingRoot) {
+            FlipTransform(railVisual, sign);
+        }
+
+        Transform ledge = LedgeVisualRoot;
+        if (ledge != null && ledge != FacingRoot) {
+            FlipTransform(ledge, sign);
+        }
+    }
+
+    private void FlipTransform(Transform t, float sign) {
+        if (t == null) return;
+
+        Vector3 scale = t.localScale;
+        float wanted = Mathf.Abs(scale.x) * (sign >= 0f ? 1f : -1f) * (spriteFacesRight ? 1f : -1f);
+
+        if (!Mathf.Approximately(scale.x, wanted)) {
+            scale.x = wanted;
+            t.localScale = scale;
+        }
+    }
+
+    // Segue o input (ou a velocidade). Estados especiais seguram o lado:
+    //   - TurnOver: mantém o lado ANTIGO durante a animação, para ela não tocar espelhada ao contrário.
+    //     Ao terminar o TurnOver, o lado novo é aplicado.
+    //   - Grind: o GrindState controla. Interagindo: mantém. Parede e quina: sempre olham para a parede.
+    private void UpdateFacing() {
+        if (!flipSpriteToFacing || StateMachine == null) return;
+
+        PlayerState current = StateMachine.Current;
+        if (current == Grind || current == Interact || current == TurnOver) return;
+
+        // Quina: sempre olha para a parede/quina (LedgeDir = lado da quina), não importa como chegou
+        if (current == LedgeGrab || current == LedgeClimb) {
+            if (LedgeDir != 0) SetFacing(LedgeDir);
+            return;
+        }
+
+        if (current == WallGrab || current == WallSlide) {
+            if (wallDirection != 0) SetFacing(-wallDirection);
+            return;
+        }
+
+        int direction = 0;
+        if (HasInput && !IsWallJumpLocked)         direction = MoveInput > 0f ? 1 : -1;
+        else if (Mathf.Abs(VelocityX) > 0.1f)      direction = VelocityX > 0f ? 1 : -1;
+
+        if (direction != 0) SetFacing(direction);
+    }
+
     // ------------------------------------------- Interação (diálogo, NPCs, objetos) -------------------------------------------
 
     // C#: player.InteractionStarted += ...  (os mesmos avisos existem como UnityEvent no Inspector)
@@ -1003,6 +1118,81 @@ public class PlayerController : MonoBehaviour {
         Gizmos.DrawLine(head, head + Vector3.left  * forwardDist);
         Gizmos.DrawLine(head, head + Vector3.right * forwardDist);
         
+        
+// Ledge Grab: detecção da quina e posicionamento do Grab
+        LayerMask ledgeMask = EffectiveWallLayer;
+
+        foreach (int dir in new[] { 1, -1 }) {
+            Vector2 direction = new Vector2(dir, 0f);
+
+            // Reproduz a detecção da parede no peito
+            Vector2 chestOrigin = new Vector2(
+                b.center.x,
+                b.center.y + b.extents.y * 0.3f
+            );
+            
+            RaycastHit2D wallHit = Physics2D.Raycast(
+                chestOrigin, direction, forwardDist, ledgeMask
+            );
+
+            if (!wallHit) continue;
+
+            // Verifica se existe espaço livre acima da cabeça
+            Vector2 headOrigin = new Vector2(
+                b.center.x,
+                b.max.y + 0.15f
+            );
+
+            RaycastHit2D headHit = Physics2D.Raycast(
+                headOrigin, direction, forwardDist, ledgeMask
+            );
+
+            if (headHit) continue;
+
+            // Origem da detecção vertical da quina
+            Vector2 downOrigin = new Vector2(
+                wallHit.point.x + dir * 0.05f,
+                b.max.y + 0.3f
+            );
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(wallHit.point, 0.04f);
+
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(
+                downOrigin,
+                downOrigin + Vector2.down * b.size.y
+            );
+
+            RaycastHit2D downHit = Physics2D.Raycast(
+                downOrigin, Vector2.down, b.size.y, ledgeMask
+            );
+
+            if (!downHit) continue;
+
+            float ledgeY = downHit.point.y;
+
+            if (ledgeY < b.center.y || ledgeY > b.max.y + 0.3f)
+                continue;
+
+            // Posição da quina detectada
+            Vector2 corner = new Vector2(wallHit.point.x, ledgeY);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(corner, 0.07f);
+
+            // Posição do Transform do jogador após agarrar
+            Vector2 grabPosition = new Vector2(
+                corner.x - dir * ledgeGrabOffset.x,
+                corner.y - ledgeGrabOffset.y
+            );
+
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawLine(corner, grabPosition);
+            Gizmos.DrawWireSphere(grabPosition, 0.09f);
+        }
+
+
         //Rail Check Radius
         Vector3 railCheckPosition = new Vector3(
             b.center.x,
