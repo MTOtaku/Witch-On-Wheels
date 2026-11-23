@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: Divox
   m_EditorClassIdentifier: Assembly-CSharp::AvatarData
   AvatarName: Divox
+  AvatarSprite: {fileID: 5033099964498160606, guid: 63804e05dcaa7034db697e80522e94f5, type: 3}

@@ -7,6 +7,9 @@ public class NPCController : MonoBehaviour, IInteractable
     [SerializeField] private NPCStateEnum npcState;
     [SerializeField] private AvatarData avatarData;
 
+    [Header("Avatar Objects")]
+    [SerializeField] private SpriteRenderer body;
+
     [Header("Avatar Dialog Objects")]
     [SerializeField] private DialogController dialogController;
     [SerializeField] private BubbleChatController chatController;
@@ -25,6 +28,7 @@ public class NPCController : MonoBehaviour, IInteractable
 
     void Start()
     {
+        body.sprite = avatarData.AvatarSprite;
         chatController.ShowChat(false);
         if(hasQuestToGiveDialog == null || preRequisiteQuestToShowQuest != null)
             UpdateNPCState(NPCStateEnum.Default);        

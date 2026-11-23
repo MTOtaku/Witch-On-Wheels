@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: FonteDeAgua
   m_EditorClassIdentifier: Assembly-CSharp::AvatarData
   AvatarName: Fonte de Agua
+  AvatarSprite: {fileID: 1424054538274591905, guid: 1a0d5f3761c9ee744b5cf5d61ee595cd, type: 3}
