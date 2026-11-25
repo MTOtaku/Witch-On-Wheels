@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.Localization.Plugins.XLIFF.V12;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -195,6 +196,11 @@ public class PlayerController : MonoBehaviour {
 
     [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
     [Min(0.01f)] public float railAirTurnDeceleration = 18f;
+    
+    [Header("Visual do Feio")]
+    [Tooltip("Objeto do sprite que é espelhado")]
+    public Transform TurnOverSprite;
+    
     
     [Header("Orientação do Sprite")]
     [Tooltip("Liga o espelhamento do sprite (escala X negativa) conforme o lado para onde o Player anda.")]
@@ -805,6 +811,7 @@ public class PlayerController : MonoBehaviour {
     public int FacingDirection { get; private set; } = 1;
 
     private Transform FacingRoot => facingVisual != null ? facingVisual : RailVisualRoot;
+    private Transform TurnFacing => TurnOverSprite  != null ? TurnOverSprite : RailVisualRoot;
 
     public void SetFacing(int direction) {
         if (direction == 0) return;
@@ -820,15 +827,17 @@ public class PlayerController : MonoBehaviour {
         if (!flipSpriteToFacing) return;
 
         FlipTransform(FacingRoot, sign);
+        FlipTransform(TurnFacing, sign);
 
         if (railFlipVisual && railVisual != null && railVisual != FacingRoot) {
             FlipTransform(railVisual, sign);
         }
-
+        
         Transform ledge = LedgeVisualRoot;
         if (ledge != null && ledge != FacingRoot) {
             FlipTransform(ledge, sign);
         }
+        
     }
 
     private void FlipTransform(Transform t, float sign) {
@@ -863,11 +872,12 @@ public class PlayerController : MonoBehaviour {
             if (wallDirection != 0) SetFacing(-wallDirection);
             return;
         }
-
+        
+        
         int direction = 0;
         if (HasInput && !IsWallJumpLocked)         direction = MoveInput > 0f ? 1 : -1;
         else if (Mathf.Abs(VelocityX) > 0.1f)      direction = VelocityX > 0f ? 1 : -1;
-
+        
         if (direction != 0) SetFacing(direction);
     }
 
