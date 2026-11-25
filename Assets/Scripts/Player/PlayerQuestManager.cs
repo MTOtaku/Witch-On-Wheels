@@ -4,7 +4,7 @@ using UnityEngine.XR;
 
 public class PlayerQuestManager : MonoBehaviour
 {
-    [SerializeField] private List<Quest> playerQuests; 
+    [SerializeField] private List<GameQuest> playerQuests; 
 
     private void OnEnable()
     {
@@ -22,9 +22,11 @@ public class PlayerQuestManager : MonoBehaviour
 
     private void ReceiveQuest(QuestData data)
     {
-        Quest newQuest = new Quest();
+        Debug.Log("Recebi uma quest");
+        GameQuest newQuest = new GameQuest();
         newQuest.Initialize(data);
         playerQuests.Add(newQuest);
+        GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
     }
 
     private void PlayerObtainedItem(ItemData data)
@@ -36,6 +38,8 @@ public class PlayerQuestManager : MonoBehaviour
                 quest.CheckQuest(data);
             }
         }
+        GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
+
     }
 
     private void PlayerSpeakedWithNPC(AvatarData data)
@@ -47,11 +51,12 @@ public class PlayerQuestManager : MonoBehaviour
                 quest.CheckQuest(data);
             }
         }
+                GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
     }
 }
 
 [System.Serializable]
-public class Quest
+public class GameQuest
 {
     public string QuestName;
     public List<Task> QuestTask = new List<Task>();

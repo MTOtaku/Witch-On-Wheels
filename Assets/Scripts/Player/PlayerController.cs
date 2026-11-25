@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -222,6 +223,7 @@ public class PlayerController : MonoBehaviour {
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
     public InputActionReference interactAction;
+    public InputActionReference bookAction;
     [Header("Status (leitura)")]
     public bool isGrounded;
     public int wallDirection; // -1 = esquerda, 1 = direita, 0 = nenhuma
@@ -404,6 +406,8 @@ public class PlayerController : MonoBehaviour {
         if (jumpAction?.action != null) jumpAction.action.Enable();
         if (interactAction?.action != null) interactAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
+        if (bookAction?.action != null) bookAction.action.Enable();
+        
     }
 
     private void OnDisable() {
@@ -411,6 +415,7 @@ public class PlayerController : MonoBehaviour {
         if (jumpAction?.action != null) jumpAction.action.Disable();
         if (interactAction?.action != null) interactAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
+        if (bookAction?.action != null) bookAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
@@ -471,8 +476,13 @@ public class PlayerController : MonoBehaviour {
         {
             playerInteractable.TryExecutInteraction(data);
         }
-    }
 
+        if(bookAction?.action != null && bookAction.action.WasPressedThisFrame())
+        {
+            GameEvents.UI.SetBookVisibility.Invoke(TypeBook.GameBook);
+        }
+        
+    }
     // -------------------------------------------  Chão   -------------------------------------------
       
     

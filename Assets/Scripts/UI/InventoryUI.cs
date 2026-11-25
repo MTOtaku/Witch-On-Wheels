@@ -5,7 +5,7 @@ using UnityEngine;
 public class InventoryUI : MonoBehaviour
 {
 
-    [SerializeField] private List<SlotUI> slotsItem;
+    [SerializeField] private List<InventorySlotUI> slotsItem;
 
     void OnEnable()
     {

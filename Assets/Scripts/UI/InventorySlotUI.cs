@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SlotUI : MonoBehaviour
+public class InventorySlotUI : MonoBehaviour
 {
 
     [SerializeField] private Image itemRenderer;
