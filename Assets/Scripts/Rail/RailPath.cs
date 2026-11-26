@@ -203,6 +203,31 @@ public class RailPath : MonoBehaviour {
 
     // ------------------------------------------- API usada pelo Player -------------------------------------------
 
+    // ------------------------------------------- Ganchos para trilhos especiais (ex.: LoopRailPath) -------------------------------------------
+    // O trilho comum não restringe nada: estes valores reproduzem o comportamento padrão.
+
+    // Decide se o Player pode entrar neste trilho e em qual distância.
+    // feet = pés, pivot = pivô do Player, velocity = velocidade atual, maxDistance = raio máximo de detecção.
+    public virtual bool TryGetEntry(Vector2 feet, Vector2 pivot, Vector2 velocity, float maxDistance, out float distance) {
+        distance = GetClosestDistance(feet);
+        return true;
+    }
+
+    // true = o trilho obriga o sentido e o lado do Player ao entrar (dir: +1 rumo ao fim / -1 rumo ao início; normalSign: lado do trilho)
+    public virtual bool GetForcedEntry(out int dir, out float normalSign) {
+        dir = 0;
+        normalSign = 0f;
+        return false;
+    }
+
+    // true = o Player não pode inverter o sentido dentro deste trilho
+    public virtual bool LockDirection => false;
+
+    // false = o Player não pode trocar de trilho (cima/baixo) de dentro deste trilho
+    public virtual bool AllowRailSwitch => true;
+
+    protected virtual void DrawExtraGizmos() { }
+
     // Posição no MUNDO a uma distância d do início do trilho
     public Vector2 GetPoint(float d) {
         if (!IsValid) return transform.position;
@@ -263,5 +288,7 @@ public class RailPath : MonoBehaviour {
         for (int i = 0; i < _samples.Length - 1; i++) {
             Gizmos.DrawLine(transform.TransformPoint(_samples[i]), transform.TransformPoint(_samples[i + 1]));
         }
+
+        DrawExtraGizmos();
     }
 }

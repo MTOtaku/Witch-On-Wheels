@@ -109,18 +109,29 @@ public class TurnOverState : GroundedState {
 
 // ------------------------------------------- Rise -------------------------------------------
 public class RiseState : PlayerState {
+    // Gravidade da subida: só o pulo comum usa o Jump Speed. Wall Jump e pulo de trilho ficam em 1.
+    private float _riseGravity = 1f;
+
     public RiseState(PlayerController player) : base(player) { }
+
+    // Usado pelo GrindState: o pulo do trilho tem a própria força e não usa o Jump Speed
+    public void UseDefaultGravity() {
+        _riseGravity = 1f;
+        player.SetGravityMultiplier(1f);
+    }
 
     public override void Enter() {
         // Quando vem de um Wall Jump, a velocidade já foi definida por DoWallJump.
         // Não sobrescrevemos — apenas limpamos a flag e ajustamos a gravidade.
         if (player.IsFromWallJump) {
             player.ClearWallJumpFlag();
+            _riseGravity = 1f;
         } else {
             player.ConsumeJump();
-            player.SetVelocityY(player.jumpForce);
+            player.SetVelocityY(player.JumpStartSpeed);          // velocidade da subida
+            _riseGravity = player.JumpRiseGravityMultiplier;     // mantém a altura do Jump Force
         }
-        player.SetGravityMultiplier(1f);
+        player.SetGravityMultiplier(_riseGravity);
         player.PlayAnimation(PlayerAnim.Rise);
     }
 
@@ -158,7 +169,7 @@ public class RiseState : PlayerState {
         if (player.ConsumeJumpRelease() && player.VelocityY > 0f)
             player.SetVelocityY(player.VelocityY * player.jumpCutMultiplier);
 
-        player.SetGravityMultiplier(player.JumpHeld ? 1f : player.fallMultiplier);
+        player.SetGravityMultiplier(player.JumpHeld ? _riseGravity : player.fallMultiplier * _riseGravity);
     }
 }
 
@@ -456,6 +467,10 @@ public class GrindState : PlayerState {
     private float _prevInputY;
     private Transform _visual;
     private Vector3 _visualRestPosition;   // posição local do sprite fora do trilho (restaurada ao sair)
+    private Vector2 _switchOffset;         // deslocamento que falta percorrer até o novo trilho (troca de trilho)
+
+    // Enquanto o Player ainda está se deslocando para o novo trilho
+    private bool IsSwitching => _switchOffset.sqrMagnitude > 0.0001f;
 
     public GrindState(PlayerController player) : base(player) { }
 
@@ -465,6 +480,7 @@ public class GrindState : PlayerState {
         _height = player.PivotToFeet;
         _prevInputY = player.MoveInputY;
         _visual = player.RailVisualRoot;
+        _switchOffset = Vector2.zero;
         if (_visual != null) _visualRestPosition = _visual.localPosition;
 
         if (_rail == null || !_rail.IsValid) {
@@ -474,10 +490,18 @@ public class GrindState : PlayerState {
 
         Vector2 tangent = _rail.GetTangent(_distance);
 
+        // Trilhos especiais (loop) obrigam o lado e o sentido; os comuns deixam livre
+        bool forced = _rail.GetForcedEntry(out int forcedDir, out float forcedNormalSign);
+
         // Lado do trilho em que o Player está (normalmente em cima)
-        Vector2 toPlayer = player.rb.position - _rail.GetPoint(_distance);
-        float side = Vector2.Dot(toPlayer, Perp(tangent));
-        _normalSign = Mathf.Abs(side) > 0.01f ? Mathf.Sign(side) : (Perp(tangent).y >= 0f ? 1f : -1f);
+        if (forced) {
+            _normalSign = forcedNormalSign;
+        }
+        else {
+            Vector2 toPlayer = player.rb.position - _rail.GetPoint(_distance);
+            float side = Vector2.Dot(toPlayer, Perp(tangent));
+            _normalSign = Mathf.Abs(side) > 0.01f ? Mathf.Sign(side) : (Perp(tangent).y >= 0f ? 1f : -1f);
+        }
 
         // Lado do mundo: input atual, senão o movimento horizontal. Parado: o lado para onde o trilho segue.
         int worldSide;
@@ -485,7 +509,7 @@ public class GrindState : PlayerState {
         else if (Mathf.Abs(player.VelocityX) > 0.5f) worldSide = player.VelocityX > 0f ? 1 : -1;
         else                                         worldSide = tangent.x >= 0f ? 1 : -1;
 
-        _dir = SideToDir(tangent, worldSide);
+        _dir = forced ? forcedDir : SideToDir(tangent, worldSide);
         _lastInputSide = player.HasInput ? (player.MoveInput > 0f ? 1 : -1) : 0;
 
         // Velocidade ao entrar: a guardada do pulo (volta com a mesma velocidade) ou o embalo atual
@@ -583,9 +607,17 @@ public class GrindState : PlayerState {
             return;
         }
 
+        // Troca de trilho: o deslocamento até o novo trilho diminui na velocidade railSwitchSpeed.
+        // Ele é relativo ao trilho, então o Player continua avançando enquanto desliza para o novo trilho.
+        if (IsSwitching) {
+            _switchOffset = player.railSwitchSpeed > 0f
+                ? Vector2.MoveTowards(_switchOffset, Vector2.zero, player.railSwitchSpeed * dt)
+                : Vector2.zero;
+        }
+
         // Mantém o jogador encaixado no trilho, do lado da normal (em loop, por dentro e de cabeça para baixo).
         Vector2 tangent = _rail.GetTangent(_distance);
-        Vector2 targetPos = _rail.GetPoint(_distance) + Normal(tangent) * _height;
+        Vector2 targetPos = _rail.GetPoint(_distance) + Normal(tangent) * _height + _switchOffset;
         Vector2 velocity = (targetPos - player.rb.position) / dt;
 
         player.rb.linearVelocity = Vector2.ClampMagnitude(velocity, MaxSnapVelocity);
@@ -638,6 +670,8 @@ public class GrindState : PlayerState {
     // Vira o sentido só quando o jogador APERTA um lado novo e esse lado é o oposto ao que ele está indo.
     // Segurar o mesmo lado (ou soltar o input) nunca muda o sentido: é isso que evita o vai e volta nos loops.
     private void UpdateDirection() {
+        if (_rail.LockDirection) return;   // loop: não inverte o sentido
+
         int inputSide = player.HasInput ? (player.MoveInput > 0f ? 1 : -1) : 0;
         if (inputSide == _lastInputSide) return;
 
@@ -678,6 +712,7 @@ public class GrindState : PlayerState {
         player.StateMachine.ChangeState(next);
 
         if (jump) {
+            player.Rise.UseDefaultGravity();   // pulo do trilho: não usa o Jump Speed
             if (normal.y >= UprightNormalY)
                 player.rb.linearVelocity = new Vector2(travel.x, Mathf.Max(travel.y, 0f) + player.railJumpForce);
             else
@@ -692,6 +727,9 @@ public class GrindState : PlayerState {
     // Troca para o trilho de cima (+1) ou de baixo (-1).
     // Mantém o sentido e a velocidade do movimento.
     private bool TrySwitchRail(int vertical) {
+        if (IsSwitching) return false;   // ainda deslizando para o trilho anterior
+        if (!_rail.AllowRailSwitch) return false;   // ex.: dentro de um loop
+
         if (!player.FindNeighborRail(
                 _rail,
                 vertical,
@@ -704,15 +742,28 @@ public class GrindState : PlayerState {
         Vector2 heading = oldTangent * _dir;
         Vector2 nextTangent = next.GetTangent(nextDistance);
 
+        Vector2 playerPos = player.rb.position;   // de onde o Player parte
         RailPath previous = _rail;
         _rail = next;
         _distance = nextDistance;
 
         // Mantém o mesmo sentido de movimento e o mesmo lado do trilho
         int newDir = Vector2.Dot(heading, nextTangent) >= 0f ? 1 : -1;
+        float newNormalSign = Vector2.Dot(Perp(nextTangent), oldNormal) >= 0f ? 1f : -1f;
+
+        // Se o novo trilho for um loop, ele obriga o sentido e o lado
+        if (_rail.GetForcedEntry(out int forcedDir, out float forcedNormalSign)) {
+            newDir = forcedDir;
+            newNormalSign = forcedNormalSign;
+        }
+
         _speed *= newDir * _dir;
         _dir = newDir;
-        _normalSign = Vector2.Dot(Perp(nextTangent), oldNormal) >= 0f ? 1f : -1f;
+        _normalSign = newNormalSign;
+
+        // Deslocamento até o novo trilho: percorrido na velocidade railSwitchSpeed (0 = instantâneo)
+        Vector2 snapPos = _rail.GetPoint(_distance) + Normal(nextTangent) * _height;
+        _switchOffset = player.railSwitchSpeed > 0f ? playerPos - snapPos : Vector2.zero;
 
         // Avisa a troca (animação + evento). Aqui é o único ponto onde a troca acontece.
         player.NotifyRailSwitched(previous, next, vertical);

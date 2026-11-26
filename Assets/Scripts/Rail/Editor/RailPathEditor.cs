@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(RailPath))]
+[CustomEditor(typeof(RailPath), true)]   // true = também vale para LoopRailPath
 public class RailPathEditor : Editor {
     private void OnEnable() => Undo.undoRedoPerformed += OnUndoRedo;
     private void OnDisable() => Undo.undoRedoPerformed -= OnUndoRedo;

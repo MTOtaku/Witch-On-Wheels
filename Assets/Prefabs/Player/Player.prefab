@@ -672,6 +672,7 @@ MonoBehaviour:
   decelerationTime: 2
   turnOverMinSpeed: 1
   jumpForce: 12
+  jumpSpeed: 0
   jumpCutMultiplier: 0.3
   fallMultiplier: 2
   coyoteTime: 0.15
@@ -698,6 +699,9 @@ MonoBehaviour:
   ledgeClimbOffset: {x: 0.5, y: 2}
   ledgeClimbDuration: 1.3
   ledgeGrabVisual: {fileID: 2109613418720259379}
+  oneWayPlatformLayer:
+    serializedVersion: 2
+    m_Bits: 256
   railGrindInput: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   railGrindEnabled: 1
   railLayer:
@@ -735,6 +739,7 @@ MonoBehaviour:
   railFlipVisual: 1
   railJumpForce: 12
   railEndLaunchForce: 18
+  railSwitchSpeed: 12
   railSwitchAnimDuration: 0.3
   railDropInputThreshold: 0.5
   railDropIgnoreTime: 0.4
