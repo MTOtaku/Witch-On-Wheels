@@ -4,7 +4,8 @@ using UnityEngine.XR;
 
 public class PlayerQuestManager : MonoBehaviour
 {
-    [SerializeField] private List<GameQuest> playerQuests; 
+    [SerializeField] private List<GameQuest> playerQuests;
+    public List<GameQuest> PlayerQuest => playerQuests;
 
     private void OnEnable()
     {
@@ -26,7 +27,6 @@ public class PlayerQuestManager : MonoBehaviour
         GameQuest newQuest = new GameQuest();
         newQuest.Initialize(data);
         playerQuests.Add(newQuest);
-        GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
     }
 
     private void PlayerObtainedItem(ItemData data)
@@ -38,8 +38,6 @@ public class PlayerQuestManager : MonoBehaviour
                 quest.CheckQuest(data);
             }
         }
-        GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
-
     }
 
     private void PlayerSpeakedWithNPC(AvatarData data)
@@ -51,7 +49,6 @@ public class PlayerQuestManager : MonoBehaviour
                 quest.CheckQuest(data);
             }
         }
-                GameEvents.UI.UpdateQuestUI?.Invoke(playerQuests);
     }
 }
 
@@ -59,6 +56,8 @@ public class PlayerQuestManager : MonoBehaviour
 public class GameQuest
 {
     public string QuestName;
+    public string Description;
+
     public List<Task> QuestTask = new List<Task>();
     public int CurrentTaskIndex;
     public bool IsComplete;
@@ -66,6 +65,7 @@ public class GameQuest
     public void Initialize(QuestData data)
     {
         QuestName = data.Name;
+        Description = data.Description;
         CurrentTaskIndex = 0;
         foreach (var taskData in data.Tasks)
         {
@@ -102,7 +102,6 @@ public class GameQuest
 public class Task
 {
     public string Name;
-    public string Description;
     public List<SubTask> SubTasks = new List<SubTask>();
     public bool IsComplete;
 
@@ -115,7 +114,6 @@ public class Task
             SubTasks.Add(subTask);
         }
         Name = data.Name;
-        Description = data.Description;
     }
 
     public bool CheckTask(ScriptableObject objective)
@@ -158,7 +156,7 @@ public class SubTask
 
     public void Initialize(SubTaskData data)
     {
-        Name = data.name;
+        Name = data.Name;
         ObjectiveType = data.ObjectiveType;
         Objective = data.Objective;
         count = data.count;

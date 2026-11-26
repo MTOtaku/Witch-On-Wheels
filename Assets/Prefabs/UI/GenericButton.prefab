@@ -147,16 +147,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64b9d62456522a049a5f75f808e25819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GenericButton
-  text:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  objectText: {fileID: 8506596325744029414}
+  _buttonText: {fileID: 8506596325744029414}
   _button: {fileID: 4867470345957187727}
   _hoverSound:
     Guid:
@@ -172,9 +163,6 @@ MonoBehaviour:
       Data3: 140575116
       Data4: -1873201623
     Path: event:/button
-  references:
-    version: 2
-    RefIds: []
 --- !u!114 &667955571638788434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,8 +259,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Button
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 67e06a5caaef6a345af7edb8701cf56d, type: 2}
-  m_sharedMaterial: {fileID: 2590060277242175109, guid: 67e06a5caaef6a345af7edb8701cf56d, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

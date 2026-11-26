@@ -3,9 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using FMOD.Studio;
 using FMODUnity;
+using TMPro;
 
 public class GenericButton : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI _buttonText;
     private Action _clickAction;
     private Action<int, GenericButton> _clickSelectedAction;
 
@@ -14,6 +16,12 @@ public class GenericButton : MonoBehaviour
     [SerializeField] private EventReference _hoverSound;
     [SerializeField] private EventReference _clickSound;
     private EventInstance buttonSoundInstance;
+
+    public void SetupText(string buttonText)
+    {
+        _buttonText.text = buttonText;
+    }
+
     public void Initialize(Action buttonAction)
     {
         _clickAction = buttonAction;

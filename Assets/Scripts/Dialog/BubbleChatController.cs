@@ -28,6 +28,7 @@ public class BubbleChatController : MonoBehaviour
     public void SetupBubbleDialog(DialogPart dialog, Action callback)
     {
         dialogFinishCallBack = callback;
+        Debug.Log("Ola");
         StartCoroutine(WriteDialog(dialog));
     }
 

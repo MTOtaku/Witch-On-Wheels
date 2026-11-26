@@ -237,6 +237,8 @@ public class PlayerController : MonoBehaviour {
     // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
 
     [SerializeField] private PlayerInteractable playerInteractable;
+    [SerializeField] private PlayerQuestManager playerQuestManager;
+    [SerializeField] private PlayerInventoryManager playerInventoryManager;
 
     // ------------------------------------------- State Machine -------------------------------------------
     public PlayerStateMachine StateMachine { get; private set; }
@@ -479,7 +481,7 @@ public class PlayerController : MonoBehaviour {
 
         if(bookAction?.action != null && bookAction.action.WasPressedThisFrame())
         {
-            GameEvents.UI.SetBookVisibility.Invoke(TypeBook.GameBook);
+            GameEvents.UI.SetBookVisibility.Invoke(TypeBook.GameBook, playerQuestManager.PlayerQuest);
         }
         
     }

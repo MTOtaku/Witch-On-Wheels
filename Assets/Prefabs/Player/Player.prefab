@@ -672,6 +672,8 @@ MonoBehaviour:
   currentState: 
   data: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
   playerInteractable: {fileID: 5266231385878499710}
+  playerQuestManager: {fileID: 5521326752157535231}
+  playerInventoryManager: {fileID: 1635841917595955590}
 --- !u!114 &3600075169590544203
 MonoBehaviour:
   m_ObjectHideFlags: 0

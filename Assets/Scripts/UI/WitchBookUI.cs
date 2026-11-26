@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class WitchBookUI : MonoBehaviour
@@ -11,10 +12,13 @@ public class WitchBookUI : MonoBehaviour
     [SerializeField] private GenericButton gameExitButton;
     [SerializeField] private GenericButton menuExitButton;
     [SerializeField] private List<GameObject> mainScreensOption;
+    [SerializeField] private QuestBookUI questBookUI;
+
+    List<GameQuest> quests;
 
     void Start()
     {
-        questButton.Initialize(OpenMainScreen);
+        questButton.Initialize(OpenQuestBookMainScreen);
         inventoryButton.Initialize(OpenMainScreen);
         optionButton.Initialize(OpenMainScreen);
         creditsButton.Initialize(OpenMainScreen);
@@ -30,12 +34,15 @@ public class WitchBookUI : MonoBehaviour
         GameEvents.UI.SetBookVisibility -= SetBookVisibility;
     }
 
-    public void SetBookVisibility(TypeBook type)
+    public void SetBookVisibility(TypeBook type, List<GameQuest> playerQuests)
     {
+        quests = playerQuests;
         body.gameObject.SetActive(!body.gameObject.activeSelf);
         if (!body.gameObject.activeSelf)
+        {
+            CloseQuestUI();
             return;
-
+        }
         DesactiveAllButtons();
 
         switch (type)
@@ -58,7 +65,6 @@ public class WitchBookUI : MonoBehaviour
            break; 
         }
     }
-
     private void DesactiveAllButtons()
     {
         questButton.SetActive(false);
@@ -75,6 +81,7 @@ public class WitchBookUI : MonoBehaviour
         {
             screen.SetActive(false);
         }
+        questBookUI.ResetQuestUI();
     }
 
     private void OpenMainScreen(int index, GenericButton button)
@@ -84,6 +91,22 @@ public class WitchBookUI : MonoBehaviour
             DesactiveAllMainScreen();            
             mainScreensOption[index].SetActive(true);
         }
+    }
+
+    private void OpenQuestBookMainScreen(int index, GenericButton button)
+    {
+        OpenMainScreen(index, button);
+        SetupQuest();
+    }
+
+    private void SetupQuest()
+    {
+        questBookUI.CreateQuestUI(quests);
+    }
+
+    private void CloseQuestUI()
+    {
+        questBookUI.DesactiveAllQuestUI();
     }
 }
 

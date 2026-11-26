@@ -11,7 +11,7 @@ public class ObjectPoolManager : MonoBehaviour
     private GameObject _emptyHolder;
 
     private static GameObject _dialogSystemEmpty;
-    private static GameObject _storeElementEmpty;
+    private static GameObject _questSlotUIEmpty;
 
     private static Dictionary<GameObject, ObjectPool<GameObject>> _objectPool;
     private static Dictionary<GameObject, GameObject> _cloneToPrefabMap;
@@ -29,7 +29,10 @@ public class ObjectPoolManager : MonoBehaviour
 
         _dialogSystemEmpty = new GameObject("DialogSystem");
         _dialogSystemEmpty.transform.SetParent(_emptyHolder.transform);
+        _questSlotUIEmpty = new GameObject("Quest Slot UI");
+        _questSlotUIEmpty.transform.SetParent(_emptyHolder.transform);
         DontDestroyOnLoad(_dialogSystemEmpty.transform.root);
+        DontDestroyOnLoad(_questSlotUIEmpty.transform.root);
     }
 
     private static void CreatePool(GameObject prefab, Vector3 position, Quaternion rot, PoolType poolType)
@@ -53,7 +56,7 @@ public class ObjectPoolManager : MonoBehaviour
         return obj;
     }
 
-    private static void OnGetObject(GameObject obj)
+    private static void OnGetObject(GameObject objectToGet)
     {
     }
 
@@ -76,6 +79,8 @@ public class ObjectPoolManager : MonoBehaviour
         {
             case PoolType.DialogSystem:
                 return _dialogSystemEmpty;
+            case PoolType.QuestSlotUI:
+                return _questSlotUIEmpty;
             default:
                 Debug.Log("Ainda não Implementado");
                 return null;

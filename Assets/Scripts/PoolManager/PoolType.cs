@@ -1,4 +1,5 @@
     public enum PoolType
     {
-        DialogSystem
+        DialogSystem,
+        QuestSlotUI
     }
