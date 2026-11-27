@@ -88,10 +88,18 @@ SpriteShapeRenderer:
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_ShapeTexture: {fileID: 2800000, guid: b281b91a70a624a0da1c43adc1c30c7b, type: 3}
   m_Sprites:
-  - {fileID: -8699456566823275224, guid: ec6a28762eba86a4890264c44c2593ac, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
+  - {fileID: -2393567448197480314, guid: c26450a448f64ea4ea0f6b9714d7749b, type: 3}
   m_LocalAABB:
-    m_Center: {x: 3.0258036, y: 7.0272317, z: 0}
-    m_Extent: {x: 18.555674, y: 6.4378414, z: 0}
+    m_Center: {x: 3.0243607, y: 7.0272336, z: 0}
+    m_Extent: {x: 18.433704, y: 6.1928434, z: 0}
   m_SpriteSortPoint: 0
 --- !u!114 &1523655009059791888
 MonoBehaviour:
@@ -156,7 +164,7 @@ MonoBehaviour:
       spriteIndex: 0
       corner: 1
       m_CornerMode: 1
-  m_SpriteShape: {fileID: 11400000, guid: 760eae02a5f49ed4b9ea265d6e1ee9bb, type: 2}
+  m_SpriteShape: {fileID: 11400000, guid: df912fccdcb345f41bc4e5867d303bb5, type: 2}
   m_FillPixelPerUnit: 256
   m_StretchTiling: 1
   m_SplineDetail: 16
