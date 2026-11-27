@@ -10,6 +10,22 @@ public enum RailEndLaunch {
     Custom           // usa a força definida neste trilho
 }
 
+// Resultado da consulta de entrada em um trilho (ver RailPath.TryGetEntry)
+public struct RailEntry {
+    public float distance;     // onde no trilho o Player entra
+    public int dir;            // 0 = livre (trilho comum). +1 / -1 = sentido OBRIGATÓRIO (+1 rumo ao fim, -1 rumo ao início)
+    public float normalSign;   // lado OBRIGATÓRIO do trilho (+1 / -1). Só vale se dir != 0
+
+    public bool Forced => dir != 0;
+}
+
+// Lembrança da última saída de um loop, para o Player poder voltar a ele no ar (ver LoopRailPath.reentryWindow)
+public struct RailReentry {
+    public bool active;
+    public int dir;
+    public float normalSign;
+}
+
 // Trilho como uma curva amostrada por distancia:
 // dado "d" (unidades percorridas desde o início), devolve a posição e a direção do trilho.
 [ExecuteAlways]
@@ -206,19 +222,16 @@ public class RailPath : MonoBehaviour {
     // ------------------------------------------- Ganchos para trilhos especiais (ex.: LoopRailPath) -------------------------------------------
     // O trilho comum não restringe nada: estes valores reproduzem o comportamento padrão.
 
-    // Decide se o Player pode entrar neste trilho e em qual distância.
-    // feet = pés, pivot = pivô do Player, velocity = velocidade atual, maxDistance = raio máximo de detecção.
-    public virtual bool TryGetEntry(Vector2 feet, Vector2 pivot, Vector2 velocity, float maxDistance, out float distance) {
-        distance = GetClosestDistance(feet);
+    // Decide se o Player pode entrar neste trilho e como (distância, sentido e lado).
+    // feet = pés, pivot = pivô do Player, velocity = velocidade atual, maxDistance = raio máximo de detecção,
+    // reentry = lembrança da última saída deste trilho (inactive = nenhuma).
+    public virtual bool TryGetEntry(Vector2 feet, Vector2 pivot, Vector2 velocity, float maxDistance, RailReentry reentry, out RailEntry entry) {
+        entry = new RailEntry { distance = GetClosestDistance(feet), dir = 0, normalSign = 0f };
         return true;
     }
 
-    // true = o trilho obriga o sentido e o lado do Player ao entrar (dir: +1 rumo ao fim / -1 rumo ao início; normalSign: lado do trilho)
-    public virtual bool GetForcedEntry(out int dir, out float normalSign) {
-        dir = 0;
-        normalSign = 0f;
-        return false;
-    }
+    // Tempo (s) em que o Player pode voltar a este trilho, em qualquer ponto, depois de sair dele no ar. 0 = não lembra.
+    public virtual float ReentryWindow => 0f;
 
     // true = o Player não pode inverter o sentido dentro deste trilho
     public virtual bool LockDirection => false;
