@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: d9d54e48cd32e274287fb32bbb13da24
+AssetOrigin:
+  serializedVersion: 1
+  productId: 183370
+  packageName: Feel
+  packageVersion: 5.9.1
+  assetPath: Assets/Feel/MMFeedbacks/Editor/Core/UIToolkit/FeelScriptIcon.png
+  uploadId: 830868
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -141,10 +148,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 183370
-  packageName: Feel
-  packageVersion: 5.9.1
-  assetPath: Assets/Feel/MMFeedbacks/Editor/Core/UIToolkit/FeelScriptIcon.png
-  uploadId: 830868

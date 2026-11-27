@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7763911955252787560
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.015
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995566770797350401, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6115362917399170043, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Name
+      value: Plataforma_1Way_telhadao Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Size.x
+      value: 2.3794231
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Size.y
+      value: 0.053006887
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Offset.x
+      value: 0.0029466748
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Offset.y
+      value: -0.09870064
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.x
+      value: 2.395
+      objectReference: {fileID: 0}
+    - target: {fileID: 7797082209638878078, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.y
+      value: 0.485
+      objectReference: {fileID: 0}
+    - target: {fileID: 9204662906574514042, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: a3b723d8ab7416a49aff8b4904686c36, type: 3}
+    - target: {fileID: 9204662906574514042, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}
+      propertyPath: m_SortingOrder
+      value: -9
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 2982d51c480a26743bfffc1fa838a7f2, type: 3}

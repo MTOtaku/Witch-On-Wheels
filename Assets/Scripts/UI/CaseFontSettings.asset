@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15cacb735be88e244be41500c5dc61cb, type: 3}
   m_Name: CaseFontSettings
   m_EditorClassIdentifier: Assembly-CSharp::CaseFontSettings
-  uppercaseFont: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+  uppercaseFont: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
   uppercaseFontUsesLowercaseCodes: 0
-  lowercaseFont: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
-  fallbackFont: {fileID: 11400000, guid: 3c23033802b50dd43b6cbd5a23c25314, type: 2}
+  lowercaseFont: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
+  fallbackFont: {fileID: 11400000, guid: 2cce9eeba0512ae4bbe3bac9912c545d, type: 2}

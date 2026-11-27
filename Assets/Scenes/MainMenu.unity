@@ -138,7 +138,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontStyle
       value: 0
@@ -162,7 +162,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278190080
@@ -174,7 +174,7 @@ PrefabInstance:
     - target: {fileID: 1141868809997805994, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 2751184258312034356, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_SpriteTilingProperty.newSize.x
       value: 5.97
@@ -305,9 +305,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3810827245440813369, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1775218112}
-    - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1813859386}
     - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
@@ -478,24 +475,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 514175669}
   m_CullTransparentMesh: 1
---- !u!1 &563523036 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-  m_PrefabInstance: {fileID: 1845716313}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &563523044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 563523036}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 044ce28ae5cb7e14aa8d06decad80769, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSwitcher
-  settings: {fileID: 11400000, guid: ed0423a393b4fca4fa4374a15e7ceeb7, type: 2}
 --- !u!1 &604658457
 GameObject:
   m_ObjectHideFlags: 0
@@ -507,7 +486,6 @@ GameObject:
   - component: {fileID: 604658460}
   - component: {fileID: 604658459}
   - component: {fileID: 604658458}
-  - component: {fileID: 604658461}
   m_Layer: 5
   m_Name: GameVersionTXT
   m_TagString: Untagged
@@ -537,8 +515,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Game Version: 0.03'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
+  m_sharedMaterial: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -634,19 +612,6 @@ RectTransform:
   m_AnchoredPosition: {x: 330.39, y: 39}
   m_SizeDelta: {x: 617.08, y: 60.595}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &604658461
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604658457}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 044ce28ae5cb7e14aa8d06decad80769, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSwitcher
-  settings: {fileID: 11400000, guid: ed0423a393b4fca4fa4374a15e7ceeb7, type: 2}
 --- !u!1 &677324239
 GameObject:
   m_ObjectHideFlags: 0
@@ -1408,24 +1373,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   m_MaxRayIntersections: 0
---- !u!1 &1013577100 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-  m_PrefabInstance: {fileID: 1422537649}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1013577108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1013577100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 044ce28ae5cb7e14aa8d06decad80769, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSwitcher
-  settings: {fileID: 11400000, guid: ed0423a393b4fca4fa4374a15e7ceeb7, type: 2}
 --- !u!1 &1013900776
 GameObject:
   m_ObjectHideFlags: 0
@@ -1524,7 +1471,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontStyle
       value: 0
@@ -1548,7 +1495,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278190080
@@ -1560,7 +1507,7 @@ PrefabInstance:
     - target: {fileID: 1141868809997805994, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 2751184258312034356, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_SpriteTilingProperty.newSize.x
       value: 5.92
@@ -1691,9 +1638,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3810827245440813369, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 982729269}
-    - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2099447067}
     - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
@@ -2003,7 +1947,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontStyle
       value: 0
@@ -2027,7 +1971,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278190080
@@ -2039,7 +1983,7 @@ PrefabInstance:
     - target: {fileID: 1141868809997805994, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 2751184258312034356, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_SpriteTilingProperty.newSize.x
       value: 6.66
@@ -2178,9 +2122,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3810827245440813369, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1303488079}
-    - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1013577108}
     - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
@@ -2396,24 +2337,6 @@ MonoBehaviour:
   scaleTarget: {fileID: 1775218108}
   hoverScaleMultiplier: 1.05
   scaleSpeed: 12
---- !u!1 &1813859378 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-  m_PrefabInstance: {fileID: 422647577}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1813859386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1813859378}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 044ce28ae5cb7e14aa8d06decad80769, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSwitcher
-  settings: {fileID: 11400000, guid: ed0423a393b4fca4fa4374a15e7ceeb7, type: 2}
 --- !u!1 &1830022926
 GameObject:
   m_ObjectHideFlags: 0
@@ -2481,7 +2404,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontStyle
       value: 0
@@ -2505,7 +2428,7 @@ PrefabInstance:
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 282606559579666832, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278190080
@@ -2517,7 +2440,7 @@ PrefabInstance:
     - target: {fileID: 1141868809997805994, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: -7224439089764398772, guid: d4b574c4752dfa04db45f9739cd8e1e6, type: 2}
+      objectReference: {fileID: -7224439089764398772, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
     - target: {fileID: 2751184258312034356, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       propertyPath: m_SpriteTilingProperty.newSize.x
       value: 6.06
@@ -2650,29 +2573,8 @@ PrefabInstance:
       addedObject: {fileID: 814673709}
     - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 563523044}
-    - targetCorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
---- !u!1 &2099447059 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5145631877776902952, guid: 5b2cf4a4d0ea11645b4337f817229f3e, type: 3}
-  m_PrefabInstance: {fileID: 1071407713}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2099447067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2099447059}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 044ce28ae5cb7e14aa8d06decad80769, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSwitcher
-  settings: {fileID: 11400000, guid: ed0423a393b4fca4fa4374a15e7ceeb7, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
