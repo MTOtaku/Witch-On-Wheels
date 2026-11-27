@@ -1,0 +1,36 @@
+﻿using UnityEngine;
+    
+[RequireComponent(typeof(BoxCollider2D))]
+public class CollectibleItem : MonoBehaviour {
+    [Header("Configuração")]
+    [SerializeField] private int value = 1;
+    [SerializeField] private string playerTag = "Player";
+    
+    private BoxCollider2D boxCollider;
+    private bool isCollected = false;
+    
+    private void Awake(){
+        boxCollider = GetComponent<BoxCollider2D>();
+        boxCollider.isTrigger = true;
+    }
+    
+    private void OnTriggerEnter2D(Collider2D other){
+        // Evita coletar mais de uma vez no mesmo frame
+        if (isCollected) return;
+
+        // Verifica se quem entrou no trigger é o Player (pela Tag ou pelo Script)
+        if (other.CompareTag(playerTag) || other.GetComponentInParent<PlayerCollector>() != null) {
+            PlayerCollector player = other.GetComponent<PlayerCollector>();
+            if (player == null) {
+                player = other.GetComponentInParent<PlayerCollector>();
+            }
+
+            if (player != null) {
+                isCollected = true;
+                player.AddCollectible(value);
+                
+                Destroy(gameObject);
+            }
+        }
+    }
+}
