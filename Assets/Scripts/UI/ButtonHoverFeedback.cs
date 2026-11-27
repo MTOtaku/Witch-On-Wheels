@@ -10,6 +10,8 @@ Feedback Visual para Hover/Seleção: muda os sprites e escala o botão.
 Vive no GenericButton, não interfere com outros códigos.
 Para adicionar mais efeitos(cor, som, rotação...), colocar dentrode ApplyInstant() e Update()
 */
+
+//comentário de teste de git
 {
     [Header("Mudar Sprite")]
     [Tooltip("O SpriteRenderer que mostra o ícone")]
