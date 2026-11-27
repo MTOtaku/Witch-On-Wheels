@@ -26,6 +26,7 @@ public class QuestBookUI : MonoBehaviour
         {
             ObjectPoolManager.ReturnObjectToPool(button.gameObject, PoolType.QuestSlotUI);
         }
+        gameQuestButtons.Clear();
         ResetQuestDetail();
     }
 

@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerInventoryManager : MonoBehaviour
 {
     [SerializeField] private List<ItemSlot> playerItems;
-    [SerializeField] private const int MAX_INVENTORY_ITEMS = 5;
+    private const int MAX_INVENTORY_ITEMS = 20;
 
     void Start()
     {

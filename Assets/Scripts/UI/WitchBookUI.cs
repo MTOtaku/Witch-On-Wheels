@@ -12,14 +12,18 @@ public class WitchBookUI : MonoBehaviour
     [SerializeField] private GenericButton gameExitButton;
     [SerializeField] private GenericButton menuExitButton;
     [SerializeField] private List<GameObject> mainScreensOption;
+    [SerializeField] private List<GameObject> sideScreens;
+
     [SerializeField] private QuestBookUI questBookUI;
+    [SerializeField] private  InventoryUI inventoryUI;
+
 
     List<GameQuest> quests;
 
     void Start()
     {
         questButton.Initialize(OpenQuestBookMainScreen);
-        inventoryButton.Initialize(OpenMainScreen);
+        inventoryButton.Initialize(OpenInventoryBookMainScreen);
         optionButton.Initialize(OpenMainScreen);
         creditsButton.Initialize(OpenMainScreen);
     }
@@ -37,10 +41,10 @@ public class WitchBookUI : MonoBehaviour
     public void SetBookVisibility(TypeBook type, List<GameQuest> playerQuests)
     {
         quests = playerQuests;
+        CloseQuestUI();
         body.gameObject.SetActive(!body.gameObject.activeSelf);
         if (!body.gameObject.activeSelf)
         {
-            CloseQuestUI();
             return;
         }
         DesactiveAllButtons();
@@ -84,11 +88,20 @@ public class WitchBookUI : MonoBehaviour
         questBookUI.ResetQuestUI();
     }
 
+    private void DesactiveAllSideScreens()
+    {
+        foreach (var screen in sideScreens)
+        {
+            screen.SetActive(false);
+        }
+    }
+
     private void OpenMainScreen(int index, GenericButton button)
     {
         if(index < 4)
         {
-            DesactiveAllMainScreen();            
+            DesactiveAllMainScreen();
+            DesactiveAllSideScreens();          
             mainScreensOption[index].SetActive(true);
         }
     }
@@ -97,6 +110,11 @@ public class WitchBookUI : MonoBehaviour
     {
         OpenMainScreen(index, button);
         SetupQuest();
+    }
+
+    private void OpenInventoryBookMainScreen(int index, GenericButton button)
+    {
+        OpenMainScreen(index, button);
     }
 
     private void SetupQuest()
