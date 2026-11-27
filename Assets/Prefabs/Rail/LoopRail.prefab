@@ -313,5 +313,6 @@ MonoBehaviour:
   insideSide: 0
   wrongWayTolerance: 1
   sideTolerance: 0.1
+  reentryWindow: 1
   lockDirection: 1
   allowRailSwitch: 0

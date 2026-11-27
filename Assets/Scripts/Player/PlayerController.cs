@@ -1,6 +1,6 @@
 using System;
-using Unity.VisualScripting;
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
@@ -231,6 +231,15 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("Chamado quando o jogador entra em Interagindo (ex.: abrir a caixa de diálogo, travar a câmera).")]
     public UnityEvent onInteractionStarted;
 
+    [Header("Animação")]
+    [Tooltip("Nomes dos estados do Animator que trocam instantaneamente (sem crossfade), evitando que bones e sprites apareçam ao mesmo tempo.")]
+    [SerializeField] private List<string> instantTransitionAnims = new List<string>
+    {
+        "TurnOver",
+        "Grind",
+        "LedgeGrab"
+    };
+    
     [Tooltip("Chamado quando o jogador sai de Interagindo (ex.: fim do diálogo).")]
     public UnityEvent onInteractionEnded;
 
@@ -240,7 +249,6 @@ public class PlayerController : MonoBehaviour {
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
     public InputActionReference interactAction;
-    public InputActionReference bookAction;
     [Header("Status (leitura)")]
     public bool isGrounded;
     public int wallDirection; // -1 = esquerda, 1 = direita, 0 = nenhuma
@@ -254,8 +262,6 @@ public class PlayerController : MonoBehaviour {
     // ------------------------------------------- Acesso as outras classes do Player -------------------------------------------
 
     [SerializeField] private PlayerInteractable playerInteractable;
-    [SerializeField] private PlayerQuestManager playerQuestManager;
-    [SerializeField] private PlayerInventoryManager playerInventoryManager;
 
     // ------------------------------------------- State Machine -------------------------------------------
     public PlayerStateMachine StateMachine { get; private set; }
@@ -338,6 +344,7 @@ public class PlayerController : MonoBehaviour {
     // ------------------------------------------- Rail Grinding -------------------------------------------
     public RailPath GrindRail { get; private set; }
     public float GrindStartDistance { get; private set; }
+    public RailEntry GrindEntry { get; private set; }   // sentido/lado obrigatórios da entrada (loop); dir = 0 em trilho comum
 
     public Vector2 FeetPosition => new Vector2(_col.bounds.center.x, _col.bounds.min.y);
     public float PivotToFeet => rb.position.y - _col.bounds.min.y;
@@ -402,8 +409,12 @@ public class PlayerController : MonoBehaviour {
     // Trilho ignorado temporariamente (ex.: depois de descer com Baixo + Pulo)
     private RailPath _ignoredRail;
     private float _ignoredRailUntil;
+    
+    // Estados que trocam sem crossfade para evitar flash entre bones e sprites
+    private readonly HashSet<int> _instantTransitionHashes = new HashSet<int>();
 
     private void Awake() {
+        BuildInstantTransitionSet();
         if (rb       == null) rb       = GetComponent<Rigidbody2D>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
 
@@ -442,8 +453,6 @@ public class PlayerController : MonoBehaviour {
         if (jumpAction?.action != null) jumpAction.action.Enable();
         if (interactAction?.action != null) interactAction.action.Enable();
         if (railBoostAction?.action != null) railBoostAction.action.Enable();
-        if (bookAction?.action != null) bookAction.action.Enable();
-        
     }
 
     private void OnDisable() {
@@ -451,7 +460,6 @@ public class PlayerController : MonoBehaviour {
         if (jumpAction?.action != null) jumpAction.action.Disable();
         if (interactAction?.action != null) interactAction.action.Disable();
         if (railBoostAction?.action != null) railBoostAction.action.Disable();
-        if (bookAction?.action != null) bookAction.action.Disable();
     }
 
     private void Start() => StateMachine.Initialize(Idle);
@@ -459,6 +467,7 @@ public class PlayerController : MonoBehaviour {
     private void OnValidate() {
         railCruiseSpeed = Mathf.Min(railCruiseSpeed, maxSpeed);
         railTimeUpgradeLevel = Mathf.Max(0, railTimeUpgradeLevel);
+        BuildInstantTransitionSet();
     }
 
     private void Update() {
@@ -512,13 +521,8 @@ public class PlayerController : MonoBehaviour {
         {
             playerInteractable.TryExecutInteraction(data);
         }
-
-        if(bookAction?.action != null && bookAction.action.WasPressedThisFrame())
-        {
-            GameEvents.UI.SetBookVisibility.Invoke(TypeBook.GameBook, playerQuestManager.PlayerQuest);
-        }
-        
     }
+
     // -------------------------------------------  Chão   -------------------------------------------
       
     
@@ -786,20 +790,22 @@ public class PlayerController : MonoBehaviour {
         if (!manualRequest && !automaticRequest)
             return false;
 
-        if (!FindRail(manualRequest, out RailPath rail, out float distance))
+        if (!FindRail(manualRequest, out RailPath rail, out RailEntry entry))
             return false;
 
         GrindRail = rail;
-        GrindStartDistance = distance;
+        GrindStartDistance = entry.distance;
+        GrindEntry = entry;
+        ClearRailReentry();
         StateMachine.ChangeState(Grind);
 
         return true;
     }
 
     // Procura o trilho mais próximo dos pés
-    private bool FindRail(bool manualRequest, out RailPath best, out float bestDistance) {
+    private bool FindRail(bool manualRequest, out RailPath best, out RailEntry bestEntry) {
         best = null;
-        bestDistance = 0f;
+        bestEntry = default;
 
         Vector2 feet = FeetPosition;
         int count = OverlapRails(feet, railCheckRadius);
@@ -812,9 +818,9 @@ public class PlayerController : MonoBehaviour {
 
             if (!manualRequest && !rail.autoGrab) continue;
 
-            // O trilho decide se aceita o Player e onde (trilho comum: ponto mais próximo; loop: só pela entrada, no sentido e lado certos)
-            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railCheckRadius, out float distance)) continue;
-            Vector2 point = rail.GetPoint(distance);
+            // O trilho decide se aceita o Player e onde (trilho comum: ponto mais próximo; loop: pela entrada, no sentido e lado certos, ou reentrada)
+            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railCheckRadius, GetRailReentry(rail), out RailEntry entry)) continue;
+            Vector2 point = rail.GetPoint(entry.distance);
 
             if (!manualRequest && point.y > feet.y + railAboveTolerance) continue;
 
@@ -823,7 +829,7 @@ public class PlayerController : MonoBehaviour {
             if (sqr < bestSqr) {
                 bestSqr = sqr;
                 best = rail;
-                bestDistance = distance;
+                bestEntry = entry;
             }
         }
 
@@ -831,9 +837,9 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Trilho vizinho para trocar durante o grind. vertical: +1 = acima, -1 = abaixo.
-    public bool FindNeighborRail(RailPath current, int vertical, out RailPath best, out float bestDistance) {
+    public bool FindNeighborRail(RailPath current, int vertical, out RailPath best, out RailEntry bestEntry) {
         best = null;
-        bestDistance = 0f;
+        bestEntry = default;
         if (_col == null) return false;
 
         Vector2 feet = FeetPosition;
@@ -845,8 +851,9 @@ public class PlayerController : MonoBehaviour {
             if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
             if (IsRailIgnored(rail)) continue;
 
-            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railSwitchRange, out float distance)) continue;
-            Vector2 point = rail.GetPoint(distance);
+            // Trocar de trilho nunca usa a reentrada: para entrar em um loop vale só a entrada normal
+            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railSwitchRange, default, out RailEntry entry)) continue;
+            Vector2 point = rail.GetPoint(entry.distance);
 
             float dy = (point.y - feet.y) * vertical;   // positivo = está na direção pedida
             if (dy < 0.1f || Mathf.Abs(point.x - feet.x) > SwitchHorizontalTolerance) continue;
@@ -854,7 +861,7 @@ public class PlayerController : MonoBehaviour {
             if (dy < bestDy) {
                 bestDy = dy;
                 best = rail;
-                bestDistance = distance;
+                bestEntry = entry;
             }
         }
         return best != null;
@@ -1070,6 +1077,37 @@ public class PlayerController : MonoBehaviour {
         _ignoredRailUntil = Time.time + seconds;
     }
 
+    // ------------------------------------------- Reentrada em loops -------------------------------------------
+    // Ao sair de um loop no ar (pulo ou tempo esgotado), lembra o sentido e o lado. Por um tempo, o loop aceita o Player
+    // de volta em QUALQUER ponto (pelo lado de dentro), em vez de só pela zona de entrada.
+    private RailPath _reentryRail;
+    private int _reentryDir;
+    private float _reentryNormalSign;
+    private float _reentryUntil;
+
+    public void StoreRailReentry(RailPath rail, int dir, float normalSign) {
+        float window = rail != null ? rail.ReentryWindow : 0f;
+        if (window <= 0f) { ClearRailReentry(); return; }
+
+        _reentryRail = rail;
+        _reentryDir = dir;
+        _reentryNormalSign = normalSign;
+        _reentryUntil = Time.time + window;
+    }
+
+    public void ClearRailReentry() {
+        _reentryRail = null;
+        _reentryUntil = 0f;
+    }
+
+    // Reentrada válida para este trilho (some ao pousar no chão ou quando a janela acaba)
+    private RailReentry GetRailReentry(RailPath rail) {
+        if (rail == null || rail != _reentryRail || Time.time >= _reentryUntil || isGrounded)
+            return default;
+
+        return new RailReentry { active = true, dir = _reentryDir, normalSign = _reentryNormalSign };
+    }
+
     // Velocidade mínima de lançamento ao sair pela ponta de um trilho (0 = sem lançamento)
     public float GetRailEndLaunchSpeed(RailPath rail) {
         if (rail == null) return 0f;
@@ -1159,10 +1197,24 @@ public class PlayerController : MonoBehaviour {
     public void SetVelocityY(float y)                   => rb.linearVelocity = new Vector2(rb.linearVelocity.x, y);
     public void SetGravityMultiplier(float multiplier)  => rb.gravityScale = _defaultGravity * multiplier;
 
+    private void BuildInstantTransitionSet() {
+        _instantTransitionHashes.Clear();
+        if (instantTransitionAnims == null) return;
+        for (int i = 0; i < instantTransitionAnims.Count; i++) {
+            string animName = instantTransitionAnims[i];
+            if (!string.IsNullOrWhiteSpace(animName))
+                _instantTransitionHashes.Add(Animator.StringToHash(animName));
+        }
+    }
+
     public void PlayAnimation(int stateHash, float fadeSeconds = 0.05f) {
         if (animator == null || animator.runtimeAnimatorController == null) return;
         if (!animator.HasState(0, stateHash)) return;
-        animator.CrossFadeInFixedTime(stateHash, fadeSeconds);
+
+        if (fadeSeconds <= 0f || _instantTransitionHashes.Contains(stateHash))
+            animator.Play(stateHash, 0, 0f);
+        else
+            animator.CrossFadeInFixedTime(stateHash, fadeSeconds);
     }
     
     // ------------------------------------------- Gizmos -------------------------------------------

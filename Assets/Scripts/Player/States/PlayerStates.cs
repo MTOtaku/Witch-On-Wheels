@@ -491,11 +491,12 @@ public class GrindState : PlayerState {
         Vector2 tangent = _rail.GetTangent(_distance);
 
         // Trilhos especiais (loop) obrigam o lado e o sentido; os comuns deixam livre
-        bool forced = _rail.GetForcedEntry(out int forcedDir, out float forcedNormalSign);
+        RailEntry entry = player.GrindEntry;
+        bool forced = entry.Forced;
 
         // Lado do trilho em que o Player está (normalmente em cima)
         if (forced) {
-            _normalSign = forcedNormalSign;
+            _normalSign = entry.normalSign;
         }
         else {
             Vector2 toPlayer = player.rb.position - _rail.GetPoint(_distance);
@@ -509,7 +510,7 @@ public class GrindState : PlayerState {
         else if (Mathf.Abs(player.VelocityX) > 0.5f) worldSide = player.VelocityX > 0f ? 1 : -1;
         else                                         worldSide = tangent.x >= 0f ? 1 : -1;
 
-        _dir = forced ? forcedDir : SideToDir(tangent, worldSide);
+        _dir = forced ? entry.dir : SideToDir(tangent, worldSide);
         _lastInputSide = player.HasInput ? (player.MoveInput > 0f ? 1 : -1) : 0;
 
         // Velocidade ao entrar: a guardada do pulo (volta com a mesma velocidade) ou o embalo atual
@@ -709,6 +710,10 @@ public class GrindState : PlayerState {
             }
         }
 
+        // Saiu de um loop no ar (pulo ou tempo esgotado): lembra sentido e lado para poder voltar a ele.
+        // Pela ponta ou descendo de propósito (Baixo + Pulo) não lembra.
+        if (!endOfRail && !dropDown) player.StoreRailReentry(_rail, _dir, _normalSign);
+
         player.StateMachine.ChangeState(next);
 
         if (jump) {
@@ -734,8 +739,10 @@ public class GrindState : PlayerState {
                 _rail,
                 vertical,
                 out RailPath next,
-                out float nextDistance))
+                out RailEntry nextEntry))
             return false;
+
+        float nextDistance = nextEntry.distance;
 
         Vector2 oldTangent = _rail.GetTangent(_distance);
         Vector2 oldNormal = Normal(oldTangent);
@@ -752,9 +759,9 @@ public class GrindState : PlayerState {
         float newNormalSign = Vector2.Dot(Perp(nextTangent), oldNormal) >= 0f ? 1f : -1f;
 
         // Se o novo trilho for um loop, ele obriga o sentido e o lado
-        if (_rail.GetForcedEntry(out int forcedDir, out float forcedNormalSign)) {
-            newDir = forcedDir;
-            newNormalSign = forcedNormalSign;
+        if (nextEntry.Forced) {
+            newDir = nextEntry.dir;
+            newNormalSign = nextEntry.normalSign;
         }
 
         _speed *= newDir * _dir;
