@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Feel/MMFeedbacks/Editor.meta
+guid: b38c3aee5b446914b9307897b3f70ece
+========
+guid: 2d2b3962e7d49f94e8df0b4adc792823
+>>>>>>>> 4eba118 (Adicionado Walljump, Wall Slide (para cair do walljump), Ledge Grab e adicionado o machine state do jogador):Assets/Animator.meta
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

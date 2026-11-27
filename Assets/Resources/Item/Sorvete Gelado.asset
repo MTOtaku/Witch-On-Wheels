@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44d875af6db89bd49b9e98c4a846ea65, type: 3}
+  m_Name: Sorvete Gelado
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  Name: Sorvete Gelado
+  Description: Sorvete geladinho o mais gelado de toda a cidade
+  ItemUIImage: {fileID: -6833696879240967287, guid: a672650c3ac90914f82dbae30a44f1b7, type: 3}
+  ItemBodyImage: {fileID: -6833696879240967287, guid: a672650c3ac90914f82dbae30a44f1b7, type: 3}

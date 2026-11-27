@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="ParameterPreset" id="{1e021618-5411-4a8e-8980-2d7ba26b8228}">
+		<property name="name">
+			<value>gameplay</value>
+		</property>
+		<relationship name="folder">
+			<destination>{9b90c338-6085-4e8c-96ea-6ab977ee74db}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{61b89d5c-2a7e-4b3a-aceb-1da4e3bb08d5}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{61b89d5c-2a7e-4b3a-aceb-1da4e3bb08d5}">
+		<property name="parameterType">
+			<value>2</value>
+		</property>
+		<property name="maximum">
+			<value>3</value>
+		</property>
+		<property name="enumerationLabels">
+			<value>cidade</value>
+			<value>gameplay</value>
+			<value>menu</value>
+		</property>
+		<property name="initialValue">
+			<value>2</value>
+		</property>
+	</object>
+</objects>

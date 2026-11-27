@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{6bb84bc8-5345-41f0-bec1-18075248ca00}">
+		<property name="assetPath">
+			<value>anel.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>48</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>1.8665208333333334</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{0c6528b1-4b10-413c-92f4-f127e816eca7}</destination>
+		</relationship>
+	</object>
+</objects>

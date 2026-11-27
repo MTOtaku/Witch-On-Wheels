@@ -1,0 +1,58 @@
+using System;
+using System.Collections;
+using TMPro;
+using UnityEngine;
+
+public class BubbleChatController : MonoBehaviour
+{
+    [SerializeField] private AvatarData avatar;
+    public AvatarData Avatar => avatar;
+    [SerializeField] private GameObject body;
+    [SerializeField] private TextMeshPro bubbleDialogue;
+    [SerializeField] private GenericButton2D finishBubbleButton;
+    private Action dialogFinishCallBack;
+
+    void Start()
+    {
+        finishBubbleButton.SetupButton(FinishDialog);
+    }
+    public void ShowChat(bool isShow)
+    {
+        body.SetActive(isShow);
+    }
+
+    public void ClearChat()
+    {
+        bubbleDialogue.text = "";
+    }
+    public void SetupBubbleDialog(DialogPart dialog, Action callback)
+    {
+        dialogFinishCallBack = callback;
+        Debug.Log("Ola");
+        StartCoroutine(WriteDialog(dialog));
+    }
+
+    IEnumerator WriteDialog(DialogPart dialog)
+    {
+        int count = 0;
+
+        if (dialog.IsNeedClearDialog)
+        {
+            yield return new WaitForSeconds(0.5f);
+            bubbleDialogue.text = "";
+        }
+
+        while (count < dialog.Sentence.Length)
+        {
+            bubbleDialogue.text += dialog.Sentence[count];
+            yield return new WaitForSeconds(dialog.CharacterDisplayDelay);
+            count++;
+        }
+
+    }
+
+    private void FinishDialog()
+    {
+        dialogFinishCallBack?.Invoke();
+    }
+}

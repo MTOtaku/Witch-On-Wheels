@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e3076003336d6d47b88b79f9e9fc9d2, type: 3}
+  m_Name: T_Colete_agua_da_fonte
+  m_EditorClassIdentifier: Assembly-CSharp::TaskData
+  Name: Colete Agua da Fonte
+  Description: "Preciso que voc\xEA colete agua da fonte de pandora"
+  SubTasks:
+  - {fileID: 11400000, guid: 03b59dc3cb0bc054aaf57b115798bb16, type: 2}
