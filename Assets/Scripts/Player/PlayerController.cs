@@ -20,8 +20,12 @@ public class PlayerController : MonoBehaviour {
     [Min(0.1f)] public float turnOverMinSpeed = 1f;
 
     [Header("Pulo")]
-    [Tooltip("Velocidade vertical inicial do pulo.")]
+    [Tooltip("Define a ALTURA do pulo (velocidade vertical de referência: altura ≈ Jump Force² ÷ (2 × gravidade)).")]
     public float jumpForce = 12f;
+
+    [Tooltip("VELOCIDADE da subida do pulo (u/s), independente da altura. A altura continua sendo a do Jump Force; este valor só muda o quão rápido o Player chega ao topo. " +
+             "Maior = sobe mais rápido e seco. Menor = sobe mais devagar e flutuante. 0 = usa o mesmo valor do Jump Force (comportamento antigo).")]
+    [Min(0f)] public float jumpSpeed = 0f;
 
     [Tooltip("Multiplicador da velocidade vertical ao soltar o botão na subida (0 a 1).")]
     [Range(0f, 1f)] public float jumpCutMultiplier = 0.5f;
@@ -74,6 +78,10 @@ public class PlayerController : MonoBehaviour {
 
     [Tooltip("Objeto do sprite de Ledge Grab. Se vazio, procura por 'LedgeGrab_Sprite' nos filhos.")]
     public Transform ledgeGrabVisual;
+
+    [Tooltip("Camada das plataformas 1 Way (Platform Effector 2D). Ela entra na detecção de quina, mas a plataforma só pode ser agarrada pelas PONTAS (laterais), " +
+             "nunca pelo meio quando o Player a atravessa por baixo. Qualquer collider com Platform Effector 2D (Use One Way) nas camadas de parede/chão também é tratado como 1 Way.")]
+    public LayerMask oneWayPlatformLayer;
 
     public Transform LedgeVisualRoot => ledgeGrabVisual != null ? ledgeGrabVisual : transform.Find("LedgeGrab_Sprite");
 
@@ -178,6 +186,10 @@ public class PlayerController : MonoBehaviour {
     [Min(0f)] public float railEndLaunchForce = 18f;
 
     [Header("Rail Grinding - Troca de trilho")]
+    [Tooltip("Velocidade (u/s) com que o Player se desloca até o novo trilho ao trocar. Tempo da troca ≈ distância entre os trilhos ÷ esta velocidade " +
+             "(ex.: 3 u de distância a 10 u/s = 0,3 s). Ajuste para encaixar com a animação RailSwitch. 0 = troca instantânea (teleporte).")]
+    [Min(0f)] public float railSwitchSpeed = 12f;
+
     [Tooltip("Tempo (s) em que a animação de troca de trilho toca antes de voltar para a de Grind. Enquanto não existir o estado 'RailSwitch' no Animator, toca a animação de pulo (Rise).")]
     [Min(0.05f)] public float railSwitchAnimDuration = 0.3f;
 
@@ -196,6 +208,11 @@ public class PlayerController : MonoBehaviour {
 
     [Tooltip("Frenagem (u/s²) no ar ao apertar para o lado oposto enquanto mantém o embalo do trilho. O Player freia, vira e acelera de novo.")]
     [Min(0.01f)] public float railAirTurnDeceleration = 18f;
+    
+    [Header("Visual do Feio")]
+    [Tooltip("Objeto do sprite que é espelhado")]
+    public Transform TurnOverSprite;
+    
     
     [Header("Orientação do Sprite")]
     [Tooltip("Liga o espelhamento do sprite (escala X negativa) conforme o lado para onde o Player anda.")]
@@ -327,6 +344,23 @@ public class PlayerController : MonoBehaviour {
     public Transform RailVisualRoot => railVisual != null ? railVisual : (animator != null ? animator.transform : null);
 
     public LayerMask EffectiveWallLayer => wallLayer.value != 0 ? wallLayer : groundLayer;
+
+    // Camadas usadas na detecção de quina: parede/chão + plataformas 1 Way
+    private LayerMask LedgeLayer => EffectiveWallLayer.value | oneWayPlatformLayer.value;
+
+    // ------------------------------------------- Pulo: velocidade x altura -------------------------------------------
+    // Velocidade vertical inicial do pulo comum
+    public float JumpStartSpeed => jumpSpeed > 0f ? jumpSpeed : jumpForce;
+
+    // Multiplicador de gravidade na SUBIDA que mantém a altura do Jump Force mesmo com outra velocidade:
+    // altura = v² ÷ (2g)  ->  para a mesma altura com v = jumpSpeed, g' = g × (jumpSpeed ÷ jumpForce)²
+    public float JumpRiseGravityMultiplier {
+        get {
+            if (jumpSpeed <= 0f || jumpForce <= 0.01f) return 1f;
+            float ratio = jumpSpeed / jumpForce;
+            return ratio * ratio;
+        }
+    }
 
     // ------------------------------------------- Privados -------------------------------------------
     private Collider2D _col;
@@ -661,7 +695,7 @@ public class PlayerController : MonoBehaviour {
         if (_col == null || !CanGrabLedge || isGrounded) return false;
 
         Bounds bounds = _col.bounds;
-        LayerMask mask = EffectiveWallLayer;
+        LayerMask mask = LedgeLayer;
 
         int[] testDirs;
         if      (wallDirection != 0)  testDirs = new[] { wallDirection };
@@ -678,6 +712,10 @@ public class PlayerController : MonoBehaviour {
             RaycastHit2D wallHit = Physics2D.Raycast(chestOrigin, dirVec, forwardDist, mask);
             if (!wallHit) continue;
 
+            // Plataforma 1 Way: só vale se for uma PONTA (face lateral). Ignora quando o Player
+            // está atravessando a plataforma por baixo (centro dentro do collider).
+            if (IsOneWayPlatform(wallHit.collider) && !IsOneWayEdgeHit(wallHit, chestOrigin, dir)) continue;
+
             // 2. Raio acima da cabeça — deve ser espaço livre
             Vector2 headOrigin = new Vector2(bounds.center.x, bounds.max.y + 0.15f);
             if (Physics2D.Raycast(headOrigin, dirVec, forwardDist, mask)) continue;
@@ -687,6 +725,9 @@ public class PlayerController : MonoBehaviour {
             RaycastHit2D downHit = Physics2D.Raycast(downOrigin, Vector2.down, bounds.size.y, mask);
             if (!downHit) continue;
 
+            // Plataforma 1 Way: se o raio já começou dentro do collider, não existe quina de verdade
+            if (downHit.fraction <= 0f && IsOneWayPlatform(downHit.collider)) continue;
+
             float ledgeY = downHit.point.y;
             if (ledgeY >= bounds.center.y && ledgeY <= bounds.max.y + 0.3f) {
                 cornerPos = new Vector2(wallHit.point.x, ledgeY);
@@ -695,6 +736,22 @@ public class PlayerController : MonoBehaviour {
             }
         }
         return false;
+    }
+
+    // True se o collider é uma plataforma 1 Way: está na camada de plataformas ou usa Platform Effector 2D com Use One Way
+    private bool IsOneWayPlatform(Collider2D c) {
+        if (c == null) return false;
+        if (((1 << c.gameObject.layer) & oneWayPlatformLayer.value) != 0) return true;
+
+        return c.usedByEffector && c.TryGetComponent(out PlatformEffector2D effector) && effector.useOneWay;
+    }
+
+    // Valida se o raio do peito acertou a PONTA de uma plataforma 1 Way:
+    //   - o raio não pode ter começado dentro do collider (Player atravessando a plataforma);
+    //   - a superfície acertada precisa ser uma face lateral virada para o Player.
+    private bool IsOneWayEdgeHit(RaycastHit2D wallHit, Vector2 origin, int dir) {
+        if (wallHit.fraction <= 0f || wallHit.collider.OverlapPoint(origin)) return false;
+        return wallHit.normal.x * dir < -0.5f;
     }
 
     public void GrabLedge(Vector2 corner, int dir) {
@@ -755,9 +812,10 @@ public class PlayerController : MonoBehaviour {
 
             if (!manualRequest && !rail.autoGrab) continue;
 
-            float distance = rail.GetClosestDistance(feet);
+            // O trilho decide se aceita o Player e onde (trilho comum: ponto mais próximo; loop: só pela entrada, no sentido e lado certos)
+            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railCheckRadius, out float distance)) continue;
             Vector2 point = rail.GetPoint(distance);
-            
+
             if (!manualRequest && point.y > feet.y + railAboveTolerance) continue;
 
             float sqr = (point - feet).sqrMagnitude;
@@ -787,7 +845,7 @@ public class PlayerController : MonoBehaviour {
             if (!rail.isActiveAndEnabled || !rail.IsValid) continue;
             if (IsRailIgnored(rail)) continue;
 
-            float distance = rail.GetClosestDistance(feet);
+            if (!rail.TryGetEntry(feet, rb.position, rb.linearVelocity, railSwitchRange, out float distance)) continue;
             Vector2 point = rail.GetPoint(distance);
 
             float dy = (point.y - feet.y) * vertical;   // positivo = está na direção pedida
@@ -817,6 +875,7 @@ public class PlayerController : MonoBehaviour {
     public int FacingDirection { get; private set; } = 1;
 
     private Transform FacingRoot => facingVisual != null ? facingVisual : RailVisualRoot;
+    private Transform TurnFacing => TurnOverSprite  != null ? TurnOverSprite : RailVisualRoot;
 
     public void SetFacing(int direction) {
         if (direction == 0) return;
@@ -832,15 +891,17 @@ public class PlayerController : MonoBehaviour {
         if (!flipSpriteToFacing) return;
 
         FlipTransform(FacingRoot, sign);
+        FlipTransform(TurnFacing, sign);
 
         if (railFlipVisual && railVisual != null && railVisual != FacingRoot) {
             FlipTransform(railVisual, sign);
         }
-
+        
         Transform ledge = LedgeVisualRoot;
         if (ledge != null && ledge != FacingRoot) {
             FlipTransform(ledge, sign);
         }
+        
     }
 
     private void FlipTransform(Transform t, float sign) {
@@ -875,11 +936,12 @@ public class PlayerController : MonoBehaviour {
             if (wallDirection != 0) SetFacing(-wallDirection);
             return;
         }
-
+        
+        
         int direction = 0;
         if (HasInput && !IsWallJumpLocked)         direction = MoveInput > 0f ? 1 : -1;
         else if (Mathf.Abs(VelocityX) > 0.1f)      direction = VelocityX > 0f ? 1 : -1;
-
+        
         if (direction != 0) SetFacing(direction);
     }
 
@@ -1132,7 +1194,7 @@ public class PlayerController : MonoBehaviour {
         
         
 // Ledge Grab: detecção da quina e posicionamento do Grab
-        LayerMask ledgeMask = EffectiveWallLayer;
+        LayerMask ledgeMask = LedgeLayer;
 
         foreach (int dir in new[] { 1, -1 }) {
             Vector2 direction = new Vector2(dir, 0f);
@@ -1148,6 +1210,9 @@ public class PlayerController : MonoBehaviour {
             );
 
             if (!wallHit) continue;
+
+            // Plataforma 1 Way: só as pontas contam (mesma regra do CheckLedge)
+            if (IsOneWayPlatform(wallHit.collider) && !IsOneWayEdgeHit(wallHit, chestOrigin, dir)) continue;
 
             // Verifica se existe espaço livre acima da cabeça
             Vector2 headOrigin = new Vector2(
@@ -1181,6 +1246,7 @@ public class PlayerController : MonoBehaviour {
             );
 
             if (!downHit) continue;
+            if (downHit.fraction <= 0f && IsOneWayPlatform(downHit.collider)) continue;
 
             float ledgeY = downHit.point.y;
 
