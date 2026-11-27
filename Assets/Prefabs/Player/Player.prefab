@@ -664,6 +664,7 @@ MonoBehaviour:
   moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  bookAction: {fileID: -1858255235811764088, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   isGrounded: 0
   wallDirection: 0
   currentSpeed: 0
@@ -671,6 +672,8 @@ MonoBehaviour:
   currentState: 
   data: {fileID: 11400000, guid: 14c4ab30b76c8f448896af3eaf9a2c06, type: 2}
   playerInteractable: {fileID: 5266231385878499710}
+  playerQuestManager: {fileID: 5521326752157535231}
+  playerInventoryManager: {fileID: 1635841917595955590}
 --- !u!114 &3600075169590544203
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -24,5 +24,8 @@ public static class GameEvents
     public static class UI
     {
         public static Action<List<ItemSlot>> UpdateAvatarItemUI;
+
+        public static Action<TypeBook, List<GameQuest>> SetBookVisibility;
+        public static Action<List<GameQuest>> UpdateQuestUI;
     }
 }

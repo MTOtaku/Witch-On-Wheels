@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Agua da fonte
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   Name: Agua da Fonte
+  Description: Agua da fonte. Dizem que possui propriedades medicinais
   ItemUIImage: {fileID: -7271534067839290881, guid: b57fe4a40103a3f45b303ff892458463, type: 3}
   ItemBodyImage: {fileID: -7271534067839290881, guid: b57fe4a40103a3f45b303ff892458463, type: 3}

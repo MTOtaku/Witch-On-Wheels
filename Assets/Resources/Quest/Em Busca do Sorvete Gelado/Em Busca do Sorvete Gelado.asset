@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Em Busca do Sorvete Gelado
   m_EditorClassIdentifier: Assembly-CSharp::QuestData
   Name: Em Busca do Sorvete Gelado
+  Description: "Divox est\xE1 com muito calor e seu maior desejo \xE9 um sorvete
+    bem gelado. Consiga o sorvete para ele"
   Tasks:
   - {fileID: 11400000, guid: 0ece765f77b3b724da1d3f57629eab1f, type: 2}
   - {fileID: 11400000, guid: 9f6fe24d0b5a8e34586a811c833cb253, type: 2}

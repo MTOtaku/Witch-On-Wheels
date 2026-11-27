@@ -4,7 +4,8 @@ using UnityEngine.XR;
 
 public class PlayerQuestManager : MonoBehaviour
 {
-    [SerializeField] private List<Quest> playerQuests; 
+    [SerializeField] private List<GameQuest> playerQuests;
+    public List<GameQuest> PlayerQuest => playerQuests;
 
     private void OnEnable()
     {
@@ -22,7 +23,8 @@ public class PlayerQuestManager : MonoBehaviour
 
     private void ReceiveQuest(QuestData data)
     {
-        Quest newQuest = new Quest();
+        Debug.Log("Recebi uma quest");
+        GameQuest newQuest = new GameQuest();
         newQuest.Initialize(data);
         playerQuests.Add(newQuest);
     }
@@ -51,9 +53,11 @@ public class PlayerQuestManager : MonoBehaviour
 }
 
 [System.Serializable]
-public class Quest
+public class GameQuest
 {
     public string QuestName;
+    public string Description;
+
     public List<Task> QuestTask = new List<Task>();
     public int CurrentTaskIndex;
     public bool IsComplete;
@@ -61,6 +65,7 @@ public class Quest
     public void Initialize(QuestData data)
     {
         QuestName = data.Name;
+        Description = data.Description;
         CurrentTaskIndex = 0;
         foreach (var taskData in data.Tasks)
         {
@@ -97,7 +102,6 @@ public class Quest
 public class Task
 {
     public string Name;
-    public string Description;
     public List<SubTask> SubTasks = new List<SubTask>();
     public bool IsComplete;
 
@@ -110,7 +114,6 @@ public class Task
             SubTasks.Add(subTask);
         }
         Name = data.Name;
-        Description = data.Description;
     }
 
     public bool CheckTask(ScriptableObject objective)
@@ -153,7 +156,7 @@ public class SubTask
 
     public void Initialize(SubTaskData data)
     {
-        Name = data.name;
+        Name = data.Name;
         ObjectiveType = data.ObjectiveType;
         Objective = data.Objective;
         count = data.count;

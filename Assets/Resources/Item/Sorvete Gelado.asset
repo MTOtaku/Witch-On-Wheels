@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Sorvete Gelado
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   Name: Sorvete Gelado
+  Description: Sorvete geladinho o mais gelado de toda a cidade
   ItemUIImage: {fileID: -6833696879240967287, guid: a672650c3ac90914f82dbae30a44f1b7, type: 3}
   ItemBodyImage: {fileID: -6833696879240967287, guid: a672650c3ac90914f82dbae30a44f1b7, type: 3}

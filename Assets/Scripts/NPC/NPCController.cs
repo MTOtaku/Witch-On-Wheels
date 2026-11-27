@@ -49,6 +49,7 @@ public class NPCController : MonoBehaviour, IInteractable
 
     public void Interact(PlayerInteractable playerInteractable)
     {
+        Debug.Log(canInteract);
         if(!canInteract)
             return;
         ShowDialog(playerInteractable.ChatController);
@@ -78,6 +79,7 @@ public class NPCController : MonoBehaviour, IInteractable
         List<BubbleChatController> allDialogChats = new List<BubbleChatController>(){playerChat, chatController};
         SetCanInteract();
         var dialog = ReturnCorrectDialog();
+        Debug.Log(dialog + " " +allDialogChats[0].Avatar.AvatarName + " " + allDialogChats[1].Avatar.AvatarName);
         controller.SetupDialog(dialog, allDialogChats, FinishDialog);
     }
 
