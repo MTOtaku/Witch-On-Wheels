@@ -8,7 +8,6 @@ public class PlayerCollector : MonoBehaviour {
     // Propriedade pública para consultar a quantidade atual
     public int CollectedAmount => collectedAmount;
     
-    // Evento opcional para disparar atualizações (ex: Pontos no UI )
     public UnityEvent<int> onCollectChanged;
     
     public void AddCollectible(int amount = 1){

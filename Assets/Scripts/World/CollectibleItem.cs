@@ -19,22 +19,24 @@ public class CollectibleItem : MonoBehaviour {
     }
 
     private void OnTriggerEnter2D(Collider2D other){
+        // Evita coletar mais de uma vez no mesmo frame
         if (isCollected) return;
 
-        // 1. Ignora caso o colisor que encostou seja outro Trigger (opcional)
+        // Ignora outros colisores Trigger, caso configurado
         if (ignoreTriggers && other.isTrigger) return;
 
-        // 2. Verifica se o colisor específico é um CapsuleCollider2D
-        if (other is CapsuleCollider2D) {
-            // 3. Verifica se pertence ao Player
-            if (other.CompareTag(playerTag) || other.GetComponentInParent<PlayerCollector>() != null) {
-                PlayerCollector player = other.GetComponent<PlayerCollector>() ?? other.GetComponentInParent<PlayerCollector>();
+        // Verifica se quem entrou no trigger é o Player (pela Tag ou pelo Script)
+        if (other.CompareTag(playerTag) || other.GetComponentInParent<PlayerCollector>() != null) {
+            PlayerCollector player = other.GetComponent<PlayerCollector>();
 
-                if (player != null) {
-                    isCollected = true;
-                    player.AddCollectible(value);
-                    Destroy(gameObject);
-                }
+            if (player == null) {
+                player = other.GetComponentInParent<PlayerCollector>();
+            }
+
+            if (player != null) {
+                isCollected = true;
+                player.AddCollectible(value);
+                Destroy(gameObject);
             }
         }
     }
