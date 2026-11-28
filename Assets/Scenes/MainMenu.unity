@@ -2165,7 +2165,7 @@ MonoBehaviour:
   quitButton: {fileID: 814673707}
   backsButtons: []
   gameVersionText: {fileID: 604658458}
-  GAME_SCENE_NAME: TestScene
+  GAME_SCENE_NAME: LevelDesignBlocagem02RPD
 --- !u!4 &1586334464
 Transform:
   m_ObjectHideFlags: 0

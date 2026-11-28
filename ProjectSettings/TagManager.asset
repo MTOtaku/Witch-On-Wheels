@@ -38,6 +38,15 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Ceu
+    uniqueID: 2521980035
+    locked: 0
+  - name: Nuvens
+    uniqueID: 4219118113
+    locked: 0
+  - name: Montanhas
+    uniqueID: 3102650973
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
