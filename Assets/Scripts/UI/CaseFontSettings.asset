@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15cacb735be88e244be41500c5dc61cb, type: 3}
+  m_Name: CaseFontSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CaseFontSettings
+  uppercaseFont: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
+  uppercaseFontUsesLowercaseCodes: 0
+  lowercaseFont: {fileID: 11400000, guid: 112ea88308aa1024da61e6068ce9dc63, type: 2}
+  fallbackFont: {fileID: 11400000, guid: 2cce9eeba0512ae4bbe3bac9912c545d, type: 2}

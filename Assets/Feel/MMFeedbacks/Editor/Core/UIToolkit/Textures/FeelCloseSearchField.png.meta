@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: be687c348d0c62c45a733dc1ae6f018f
+AssetOrigin:
+  serializedVersion: 1
+  productId: 183370
+  packageName: Feel
+  packageVersion: 5.9.1
+  assetPath: Assets/Feel/MMFeedbacks/Editor/Core/UIToolkit/Textures/FeelCloseSearchField.png
+  uploadId: 830868
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -128,10 +135,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 183370
-  packageName: Feel
-  packageVersion: 5.9.1
-  assetPath: Assets/Feel/MMFeedbacks/Editor/Core/UIToolkit/Textures/FeelCloseSearchField.png
-  uploadId: 830868

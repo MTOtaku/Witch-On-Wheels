@@ -79,7 +79,7 @@ MonoBehaviour:
   StringsBanks:
   - {fileID: 7077196565302252884}
   cacheVersion: 131849
-  cacheTime: 639301785796411929
+  cacheTime: 639313895187734880
   SerializableEventsDict:
   - key: event:/mx_gameplay
     index: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
   Path: Fmod project/Whitch on wheels/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639301785796411929
+  lastModified: 639313895187734880
   FileSizes:
   - Name: 
     Value: 856
@@ -149,6 +149,6 @@ MonoBehaviour:
   Path: Fmod project/Whitch on wheels/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639301785796401871
+  lastModified: 639313895187719346
   FileSizes: []
   Exists: 1
